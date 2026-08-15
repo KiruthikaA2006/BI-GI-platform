@@ -1,19 +1,190 @@
+"use client";
+
 import React from "react";
+import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
-import { MainDashboard } from "@/components/dashboard/main-dashboard";
+import {
+  Database,
+  BarChart3,
+  Sparkles,
+  TrendingUp,
+  Target,
+  ArrowRight,
+  ShieldAlert,
+  Activity,
+  Layers,
+  Zap,
+  ArrowUpRight,
+  CheckCircle2,
+  ShieldCheck,
+} from "lucide-react";
 
-export default function OrganizationDashboardPage() {
+export default function DashboardPage() {
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100">
-      {/* Organization Sidebar */}
-      <Sidebar currentRole="ORGANIZATION_ADMIN" />
-
-      {/* Workspace Content */}
+    <div className="flex h-screen bg-[#e4dac9] text-stone-900 overflow-hidden selection:bg-indigo-500">
+      <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Header title="Executive Dashboard" subtitle="Real-time growth metrics & performance telemetry" />
-        <main className="flex-1">
-          <MainDashboard />
+        <Header title="Main Dashboard — Business Health" subtitle="Central hub connecting Data Center, Dashboards, and AI Insights" />
+
+        <main className="p-6 max-w-7xl mx-auto w-full space-y-8">
+          {/* Business Health Top Banner Card */}
+          <div className="bg-white border border-stone-300 p-6 rounded-3xl relative overflow-hidden shadow-sm">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                  <Activity className="h-3.5 w-3.5" />
+                  <span>Business Health Scorecard • Active</span>
+                </div>
+                <h1 className="text-3xl font-black text-stone-900 tracking-tight">
+                  Enterprise Growth Cockpit
+                </h1>
+                <p className="text-xs text-stone-600 max-w-xl">
+                  Real-time telemetry aggregating Data Pipeline metrics, KPI Engine outputs, AI Anomaly Diagnosis, and Goal Velocity.
+                </p>
+              </div>
+
+              <div className="bg-stone-50 border border-stone-200 p-4 rounded-2xl flex items-center gap-6 min-w-[280px]">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase text-stone-500 block">Overall Business Health</span>
+                  <span className="text-3xl font-black text-emerald-700">94.8<span className="text-xs text-stone-500">/100</span></span>
+                </div>
+                <div className="h-10 w-px bg-stone-300" />
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase text-stone-500 block">Growth Index</span>
+                  <span className="text-sm font-bold text-indigo-700 flex items-center gap-1">
+                    <ArrowUpRight className="h-4 w-4" /> +14.2% YoY
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
+              <span className="text-[10px] font-bold uppercase text-stone-500">Monthly Recurring Revenue</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-stone-900">$248,500</span>
+                <span className="text-xs font-bold text-emerald-700">+8.4%</span>
+              </div>
+              <p className="text-[11px] text-stone-500">Calculated via Data Center KPI Engine</p>
+            </div>
+
+            <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
+              <span className="text-[10px] font-bold uppercase text-stone-500">Customer Churn Rate</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-stone-900">1.82%</span>
+                <span className="text-xs font-bold text-emerald-700">-0.4%</span>
+              </div>
+              <p className="text-[11px] text-stone-500">Forecast model predicts 1.5% next month</p>
+            </div>
+
+            <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
+              <span className="text-[10px] font-bold uppercase text-stone-500">AI Anomaly Alerts</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-amber-600">2 Active</span>
+                <span className="text-xs font-bold text-amber-700">Low Risk</span>
+              </div>
+              <p className="text-[11px] text-stone-500">Root Cause Analysis in AI Insights</p>
+            </div>
+
+            <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
+              <span className="text-[10px] font-bold uppercase text-stone-500">Goal Completion Rate</span>
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl font-black text-indigo-700">88.5%</span>
+                <span className="text-xs font-bold text-indigo-700">On Track</span>
+              </div>
+              <p className="text-[11px] text-stone-500">Outcome tracking active on 12 goals</p>
+            </div>
+          </div>
+
+          {/* Flowchart 3 Main Pillars Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">The 3 Architecture Pillars</h2>
+                <p className="text-xs text-stone-600">Access data ingestion, metric views, and AI diagnosis</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Data Center Card */}
+              <Link
+                href="/data-center"
+                className="bg-white border border-stone-300 p-6 rounded-3xl hover:border-indigo-400 transition group space-y-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-700 font-bold">
+                    <Database className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] uppercase font-bold bg-cyan-50 text-cyan-800 px-2.5 py-1 rounded-full border border-cyan-200">
+                    Pillar 1
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-stone-900 group-hover:text-cyan-700 transition">Data Center</h3>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    6-stage processing pipeline connecting sources, cleaning data, and defining KPI models.
+                  </p>
+                </div>
+                <div className="pt-2 flex items-center gap-1 text-xs font-bold text-cyan-700">
+                  <span>Open Pipeline & KPI Engine</span>
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+                </div>
+              </Link>
+
+              {/* Dashboards Card */}
+              <Link
+                href="/dashboards"
+                className="bg-white border border-stone-300 p-6 rounded-3xl hover:border-indigo-400 transition group space-y-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 font-bold">
+                    <BarChart3 className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] uppercase font-bold bg-blue-50 text-blue-800 px-2.5 py-1 rounded-full border border-blue-200">
+                    Pillar 2
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-stone-900 group-hover:text-blue-700 transition">Dashboards & Reports</h3>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    Visual KPI cockpits, department performance metrics, and scheduled report exports.
+                  </p>
+                </div>
+                <div className="pt-2 flex items-center gap-1 text-xs font-bold text-blue-700">
+                  <span>View KPI Cockpits & Reports</span>
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+                </div>
+              </Link>
+
+              {/* AI Insights Card */}
+              <Link
+                href="/ai-insights"
+                className="bg-white border border-stone-300 p-6 rounded-3xl hover:border-indigo-400 transition group space-y-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="h-12 w-12 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 font-bold">
+                    <Sparkles className="h-6 w-6" />
+                  </div>
+                  <span className="text-[10px] uppercase font-bold bg-purple-50 text-purple-800 px-2.5 py-1 rounded-full border border-purple-200">
+                    Pillar 3
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-stone-900 group-hover:text-purple-700 transition">AI Insights</h3>
+                  <p className="text-xs text-stone-600 mt-1 leading-relaxed">
+                    Automated anomaly detection, statistical root cause analysis, and diagnostic answers.
+                  </p>
+                </div>
+                <div className="pt-2 flex items-center gap-1 text-xs font-bold text-purple-700">
+                  <span>Explore AI Diagnosis ("Why?")</span>
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition" />
+                </div>
+              </Link>
+            </div>
+          </div>
         </main>
       </div>
     </div>

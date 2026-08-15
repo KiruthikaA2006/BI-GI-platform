@@ -21,7 +21,21 @@ import {
   Activity,
   Zap,
   UploadCloud,
+  Shield,
+  Lock,
+  User,
+  Building,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
+
+interface NavItem {
+  title: string;
+  href: string;
+  icon: any;
+  section?: string;
+  badge?: string;
+}
 
 interface SidebarProps {
   currentRole?: string;
@@ -32,7 +46,6 @@ export function Sidebar({ currentRole }: SidebarProps) {
   const [activeRole, setActiveRole] = useState("ORGANIZATION_ADMIN");
 
   useEffect(() => {
-    // 1. Try fetching from /api/auth
     fetch("/api/auth")
       .then((res) => res.json())
       .then((data) => {
@@ -56,98 +69,118 @@ export function Sidebar({ currentRole }: SidebarProps) {
       });
   }, []);
 
-  const normalizedRole = (currentRole || activeRole).toUpperCase();
+  // Path-based dynamic role context resolution (100% route isolation)
+  let resolvedRole = currentRole || activeRole;
+  if (pathname.startsWith("/admin")) resolvedRole = "SUPER_ADMIN";
+  else if (pathname.startsWith("/executive")) resolvedRole = "EXECUTIVE";
+  else if (pathname.startsWith("/manager")) resolvedRole = "DEPARTMENT_MANAGER";
+  else if (pathname.startsWith("/analyst")) resolvedRole = "ANALYST";
 
-  // Define role-specific navigation menus
-  const getNavItems = () => {
+  const normalizedRole = resolvedRole.toUpperCase();
+
+  // Define role-specific navigation menus with isolated sub-routes
+  const getNavItems = (): NavItem[] => {
     if (normalizedRole === "SUPER_ADMIN") {
       return [
-        { title: "Platform Overview", href: "/admin/dashboard", icon: LayoutDashboard },
-        { title: "Organizations", href: "/admin/organizations", icon: Building2 },
-        { title: "User Management", href: "/admin/users", icon: Users },
-        { title: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-        { title: "System Monitoring", href: "/admin/monitoring", icon: Activity },
-        { title: "Global Audit Logs", href: "/admin/audit-logs", icon: History },
+        { title: "Overview", href: "/admin/dashboard", icon: LayoutDashboard },
+        { title: "Users", href: "/admin/users", icon: Users },
+        { title: "Departments", href: "/admin/departments", icon: Building2 },
+        { title: "Roles & Permissions", href: "/admin/roles-permissions", icon: Shield },
+        { title: "Data Sources", href: "/admin/data-sources", icon: Database },
+        { title: "Data Access", href: "/admin/data-access", icon: Lock },
+        { title: "Organization Settings", href: "/admin/organization-settings", icon: Building2 },
+        { title: "Audit Logs", href: "/admin/audit-logs", icon: History },
+        { title: "Profile", href: "/admin/profile", icon: Users },
       ];
     }
 
     if (normalizedRole === "EXECUTIVE") {
       return [
-        { title: "Executive Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        { title: "High-Level KPIs", href: "/kpis", icon: Target },
-        { title: "Strategic Forecasts", href: "/forecasts", icon: TrendingUp },
-        { title: "AI Insights", href: "/ai-insights", icon: Sparkles, badge: "AI" },
-        { title: "Executive Reports", href: "/reports", icon: FileText },
+        { title: "Command Center", href: "/executive/command-center", icon: LayoutDashboard },
+        { title: "Business Health", href: "/executive/business-health", icon: Activity },
+        { title: "KPIs", href: "/executive/kpis", icon: Target },
+        { title: "AI Insights", href: "/executive/ai-insights", icon: Sparkles, badge: "AI" },
+        { title: "Trends", href: "/executive/trends", icon: TrendingUp },
+        { title: "Forecasts", href: "/executive/forecasts", icon: TrendingUp },
+        { title: "Recommendations", href: "/executive/recommendations", icon: Zap },
+        { title: "Goals & Actions", href: "/executive/goals", icon: Trophy },
+        { title: "Reports", href: "/executive/reports", icon: FileText },
+        { title: "Profile", href: "/executive/profile", icon: Users },
       ];
     }
 
     if (normalizedRole === "DEPARTMENT_MANAGER") {
       return [
-        { title: "Manager Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        { title: "Department KPIs", href: "/kpis", icon: Target },
-        { title: "Team Workspace", href: "/workspace", icon: Building2 },
-        { title: "Department Goals", href: "/goals", icon: Trophy },
-        { title: "Alerts", href: "/alerts", icon: Bell, badge: "3" },
-        { title: "Operational Reports", href: "/reports", icon: FileText },
+        { title: "Manager Dashboard", href: "/manager/dashboard", icon: LayoutDashboard },
+        { title: "Department KPIs", href: "/manager/kpis", icon: Target },
+        { title: "Team Workspace", href: "/manager/workspace", icon: Building2 },
+        { title: "Department Goals", href: "/manager/goals", icon: Trophy },
+        { title: "Alerts & Notifications", href: "/manager/alerts", icon: Bell, badge: "3" },
+        { title: "Operational Reports", href: "/manager/reports", icon: FileText },
+        { title: "My Profile", href: "/manager/profile", icon: User },
       ];
     }
 
     if (normalizedRole === "ANALYST") {
       return [
-        { title: "Analyst Dashboard", href: "/dashboard", icon: LayoutDashboard },
-        { title: "Data Ingestion", href: "/data-sources/import", icon: UploadCloud },
-        { title: "Datasets", href: "/datasets", icon: TableProperties },
-        { title: "Data Explorer", href: "/explorer", icon: Search },
-        { title: "AI Insights", href: "/ai-insights", icon: Sparkles, badge: "AI" },
-        { title: "Custom Reports", href: "/reports", icon: FileText },
+        { title: "Analyst Dashboard", href: "/analyst/dashboard", icon: LayoutDashboard },
+        { title: "Data Ingestion", href: "/analyst/ingestion", icon: UploadCloud },
+        { title: "Data Center Pipeline", href: "/analyst/data-center", icon: Database },
+        { title: "Datasets", href: "/analyst/datasets", icon: TableProperties },
+        { title: "Data Explorer", href: "/analyst/explorer", icon: Search },
+        { title: "AI Insights", href: "/analyst/ai-insights", icon: Sparkles, badge: "AI" },
+        { title: "Custom Reports", href: "/analyst/reports", icon: FileText },
+        { title: "My Profile", href: "/analyst/profile", icon: User },
       ];
     }
 
-    // Default: ORGANIZATION_ADMIN
+    // Default: ORGANIZATION_ADMIN / Tenant Scope
     return [
-      { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { title: "Workspace & Members", href: "/workspace", icon: Building2 },
-      { title: "User Management", href: "/admin/users", icon: Users },
-      { title: "Data Sources", href: "/data-sources", icon: Database },
-      { title: "Datasets", href: "/datasets", icon: TableProperties },
-      { title: "KPIs", href: "/kpis", icon: Target },
-      { title: "Reports", href: "/reports", icon: FileText },
-      { title: "Audit Logs", href: "/audit-logs", icon: History },
+      { title: "Main Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "Business Health" },
+      { title: "Data Center", href: "/data-center", icon: Database, section: "Pillars", badge: "6 Pipeline Stages" },
+      { title: "Dashboards & Reports", href: "/dashboards", icon: TableProperties, section: "Pillars" },
+      { title: "AI Insights", href: "/ai-insights", icon: Sparkles, section: "Pillars", badge: "AI" },
+      { title: "Forecasting", href: "/forecasts", icon: TrendingUp, section: "Execution Loop" },
+      { title: "AI Recommendations", href: "/ai-insights/recommendations", icon: Zap, section: "Execution Loop" },
+      { title: "Goals & Actions", href: "/goals", icon: Target, section: "Execution Loop" },
+      { title: "Workspace & Members", href: "/workspace", icon: Building2, section: "Workspace" },
+      { title: "User Management", href: "/workspace", icon: Users, section: "Workspace" },
+      { title: "Audit Logs", href: "/audit-logs", icon: History, section: "Workspace" },
     ];
   };
 
   const navItems = getNavItems();
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between h-screen sticky top-0 z-40 text-slate-300">
+    <aside className="w-64 bg-black border-r border-neutral-800 flex flex-col justify-between h-screen sticky top-0 z-40 text-neutral-300 shadow-2xl">
       {/* Top Header Logo */}
-      <div className="p-5 border-b border-slate-800 space-y-2">
+      <div className="p-5 border-b border-neutral-800 bg-neutral-950/80 space-y-2">
         <Link href="/" className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/25">
             <Zap className="h-5 w-5" />
           </div>
           <div>
-            <span className="font-bold text-white text-base tracking-tight">BI-GI Platform</span>
-            <span className="block text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">
+            <span className="font-extrabold text-white text-base tracking-tight">BI-GI Platform</span>
+            <span className="block text-[10px] text-amber-400 font-semibold uppercase tracking-wider">
               Growth Intelligence
             </span>
           </div>
         </Link>
 
         {/* Active Role Indicator Badge */}
-        <div className="bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
-          <span className="text-[10px] text-slate-400 font-bold uppercase">Role Context:</span>
+        <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800 flex items-center justify-between">
+          <span className="text-[10px] text-neutral-400 font-bold uppercase">Role Scope:</span>
           <span
             className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
               normalizedRole === "SUPER_ADMIN"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                 : normalizedRole === "EXECUTIVE"
-                ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                 : normalizedRole === "DEPARTMENT_MANAGER"
                 ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                 : normalizedRole === "ANALYST"
-                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                : "bg-slate-800 text-slate-300"
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
             }`}
           >
             {normalizedRole.replace("_", " ")}
@@ -158,8 +191,8 @@ export function Sidebar({ currentRole }: SidebarProps) {
       {/* Navigation Items */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
         <div>
-          <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Navigation Menu
+          <p className="px-3 text-xs font-extrabold text-amber-400 uppercase tracking-wider mb-2">
+            {normalizedRole.replace("_", " ")} MENU
           </p>
           <nav className="space-y-1">
             {navItems.map((item) => {
@@ -169,20 +202,20 @@ export function Sidebar({ currentRole }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-indigo-600/20 text-indigo-400 font-semibold border-l-2 border-indigo-500"
-                      : "hover:bg-slate-800/60 hover:text-white text-slate-400"
+                      ? "bg-neutral-900 text-white font-bold border-l-2 border-amber-400 shadow-md shadow-amber-400/10"
+                      : "hover:bg-neutral-900/80 hover:text-white text-neutral-400"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`h-4 w-4 ${isActive ? "text-indigo-400" : "text-slate-400"}`} />
+                    <Icon className={`h-4 w-4 ${isActive ? "text-amber-400" : "text-neutral-400"}`} />
                     <span>{item.title}</span>
                   </div>
                   {item.badge && (
                     <span
                       className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                        item.badge === "AI" ? "bg-indigo-500/20 text-indigo-300" : "bg-slate-800 text-slate-400"
+                        item.badge === "AI" ? "bg-purple-500/20 text-purple-300" : "bg-neutral-800 text-neutral-400"
                       }`}
                     >
                       {item.badge}
@@ -196,10 +229,10 @@ export function Sidebar({ currentRole }: SidebarProps) {
       </div>
 
       {/* User Profile Footer */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/50">
+      <div className="p-4 border-t border-neutral-800 bg-neutral-950/80">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-xs">
+            <div className="h-8 w-8 rounded-lg bg-amber-500 flex items-center justify-center font-bold text-black text-xs">
               {normalizedRole.charAt(0)}
             </div>
             <div className="text-left max-w-[110px]">
@@ -210,9 +243,11 @@ export function Sidebar({ currentRole }: SidebarProps) {
                   ? "Data Analyst"
                   : normalizedRole === "DEPARTMENT_MANAGER"
                   ? "Sales Manager"
+                  : normalizedRole === "SUPER_ADMIN"
+                  ? "Platform Admin"
                   : "Kiruthika Anand"}
               </span>
-              <span className="block text-[9px] text-slate-400 truncate">{normalizedRole}</span>
+              <span className="block text-[9px] text-neutral-400 truncate">{normalizedRole}</span>
             </div>
           </div>
           <Link
@@ -222,7 +257,7 @@ export function Sidebar({ currentRole }: SidebarProps) {
                 localStorage.removeItem("active_role");
               } catch (e) {}
             }}
-            className="text-xs text-slate-400 hover:text-white font-semibold"
+            className="text-xs text-neutral-400 hover:text-white font-semibold"
           >
             Logout
           </Link>

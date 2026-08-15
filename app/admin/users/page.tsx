@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
+import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { Header } from "@/components/layout/header";
-import { OrganizationSwitcher } from "@/components/layout/organization-switcher";
+import { AdminFlowNavigator } from "@/components/layout/admin-flow-navigator";
 import {
   Users,
   UserPlus,
@@ -14,68 +14,45 @@ import {
   Building,
   CheckCircle2,
   XCircle,
-  MoreVertical,
   Key,
   UserX,
   UserCheck,
   Edit,
   Building2,
+  UserCog,
 } from "lucide-react";
 
 export interface UserItem {
   id: string;
   name: string;
   email: string;
-  phone: string;
   designation: string;
   role: string;
   status: string;
   department: { id: string; name: string } | null;
 }
 
-export default function UserManagementPage() {
-  const [users, setUsers] = useState<UserItem[]>([
-    {
-      id: "usr_01",
-      name: "Kiruthika Anand",
-      email: "kiruthika@qubertrix.com",
-      phone: "+91 98765 43210",
-      designation: "Platform Administrator",
-      role: "OWNER",
-      status: "active",
-      department: { id: "dept_01", name: "Executive Engineering" },
-    },
-    {
-      id: "usr_02",
-      name: "Sarah Jenkins",
-      email: "sarah.j@qubertrix.com",
-      phone: "+91 98765 11223",
-      designation: "Head of Marketing",
-      role: "ADMIN",
-      status: "active",
-      department: { id: "dept_02", name: "Sales & Marketing" },
-    },
-    {
-      id: "usr_03",
-      name: "Rahul Verma",
-      email: "rahul.v@qubertrix.com",
-      phone: "+91 98765 99887",
-      designation: "Lead Data Analyst",
-      role: "MANAGER",
-      status: "active",
-      department: { id: "dept_03", name: "Business Analytics" },
-    },
-    {
-      id: "usr_04",
-      name: "David Miller",
-      email: "david.m@qubertrix.com",
-      phone: "+91 98765 33445",
-      designation: "Junior Analyst",
-      role: "MEMBER",
-      status: "deactivated",
-      department: { id: "dept_03", name: "Business Analytics" },
-    },
-  ]);
+import { getActiveOrganization, getOrgMembers, registerOrgMember, Organization, OrgMember } from "@/lib/org-context";
+
+export default function AdminUsersManagementPage() {
+  const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
+  const [users, setUsers] = useState<UserItem[]>([]);
+
+  useEffect(() => {
+    const org = getActiveOrganization();
+    setActiveOrg(org);
+    const orgMembers = getOrgMembers(org.id);
+    const mappedUsers: UserItem[] = orgMembers.map((m) => ({
+      id: m.id,
+      name: m.name,
+      email: m.email,
+      designation: m.designation,
+      role: m.role,
+      status: m.status,
+      department: { id: "dept_01", name: m.department },
+    }));
+    setUsers(mappedUsers);
+  }, []);
 
   const [departments, setDepartments] = useState([
     { id: "dept_01", name: "Executive Engineering" },
@@ -87,48 +64,89 @@ export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const [deptFilter, setDeptFilter] = useState("ALL");
 
-  const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
 
   // Form states
-  const [newUserName, setNewUserName] = useState("");
-  const [newUserEmail, setNewUserEmail] = useState("");
-  const [newUserPhone, setNewUserPhone] = useState("");
-  const [newUserDesignation, setNewUserDesignation] = useState("");
-  const [newUserRole, setNewUserRole] = useState("MEMBER");
-  const [newUserDeptId, setNewUserDeptId] = useState("");
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userDesignation, setUserDesignation] = useState("");
+  const [userRole, setUserRole] = useState("ORGANIZATION_ADMIN");
+  const [userDeptId, setUserDeptId] = useState("dept_01");
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.designation.toLowerCase().includes(searchTerm.toLowerCase());
+      u.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
     const matchesStatus = statusFilter === "ALL" || u.status === statusFilter;
-    const matchesDept = deptFilter === "ALL" || u.department?.id === deptFilter;
-    return matchesSearch && matchesRole && matchesStatus && matchesDept;
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    const deptObj = departments.find((d) => d.id === newUserDeptId);
+    const deptObj = departments.find((d) => d.id === userDeptId);
     const newUser: UserItem = {
       id: `usr_${Date.now()}`,
-      name: newUserName,
-      email: newUserEmail,
-      phone: newUserPhone || "N/A",
-      designation: newUserDesignation || "Team Member",
-      role: newUserRole,
+      name: userName,
+      email: userEmail,
+      designation: userDesignation || "Team Member",
+      role: userRole,
       status: "active",
       department: deptObj ? { id: deptObj.id, name: deptObj.name } : null,
     };
+
+    if (activeOrg) {
+      registerOrgMember(activeOrg.id, {
+        name: userName,
+        email: userEmail,
+        role: userRole,
+        designation: userDesignation || "Team Member",
+        department: deptObj?.name || "General",
+        status: "active",
+      });
+    }
+
     setUsers([newUser, ...users]);
     setShowCreateModal(false);
-    setNewUserName("");
-    setNewUserEmail("");
+    resetForm();
+  };
+
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    const deptObj = departments.find((d) => d.id === userDeptId);
+
+    if (activeOrg) {
+      registerOrgMember(activeOrg.id, {
+        name: userName,
+        email: userEmail,
+        role: userRole,
+        designation: userDesignation,
+        department: deptObj?.name || "General",
+        status: "active",
+      });
+    }
+
+    setUsers(
+      users.map((u) => {
+        if (u.id === editingUser.id) {
+          return {
+            ...u,
+            name: userName,
+            email: userEmail,
+            designation: userDesignation,
+            role: userRole,
+            department: deptObj ? { id: deptObj.id, name: deptObj.name } : null,
+          };
+        }
+        return u;
+      })
+    );
+    setEditingUser(null);
+    resetForm();
   };
 
   const handleToggleDeactivate = (userId: string) => {
@@ -141,93 +159,96 @@ export default function UserManagementPage() {
         return u;
       })
     );
-    if (selectedUser?.id === userId) {
-      setSelectedUser(null);
-    }
+  };
+
+  const openEditModal = (user: UserItem) => {
+    setEditingUser(user);
+    setUserName(user.name);
+    setUserEmail(user.email);
+    setUserDesignation(user.designation);
+    setUserRole(user.role);
+    setUserDeptId(user.department?.id || "dept_01");
+  };
+
+  const resetForm = () => {
+    setUserName("");
+    setUserEmail("");
+    setUserDesignation("");
+    setUserRole("ORGANIZATION_ADMIN");
+    setUserDeptId("dept_01");
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <Sidebar currentRole="ORGANIZATION_ADMIN" />
+    <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900 selection:bg-emerald-500">
+      <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Header title="User Management" subtitle="Manage Organization Users, Roles, Departments, and Permissions" />
+        <AdminFlowNavigator />
+        <Header title="Users Management" subtitle="Admin Node: Create, Invite, Edit, Deactivate, Assign Role, Assign Department" />
 
         <main className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
-          {/* Top Bar with Switcher & Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+          {/* Top Bar with Operations Overview */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-stone-300 p-6 rounded-3xl shadow-sm">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-indigo-400" />
-                <h2 className="text-xl font-bold text-white">Organization Users & Access</h2>
-              </div>
-              <p className="text-xs text-slate-400">Strictly organization-scoped RBAC and department permissions</p>
+              <span className="text-[10px] font-extrabold uppercase text-emerald-800">Admin Architecture Node: USERS</span>
+              <h2 className="text-xl font-black text-stone-900 flex items-center gap-2">
+                <span>User Account Administration</span>
+              </h2>
+              <p className="text-xs text-stone-600">
+                Operations: <strong>Create</strong> • <strong>Invite</strong> • <strong>Edit</strong> • <strong>Deactivate</strong> • <strong>Assign Role</strong> • <strong>Assign Department</strong>
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <OrganizationSwitcher />
               <button
                 onClick={() => setShowInviteModal(true)}
-                className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition"
+                className="flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 transition"
               >
-                <Mail className="h-4 w-4 text-indigo-400" />
+                <Mail className="h-4 w-4 text-emerald-700" />
                 <span>Invite User</span>
               </button>
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 transition"
+                onClick={() => {
+                  resetForm();
+                  setShowCreateModal(true);
+                }}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow transition"
               >
                 <UserPlus className="h-4 w-4" />
-                <span>Add User</span>
+                <span>Create User</span>
               </button>
             </div>
           </div>
 
           {/* Search & Filter Controls */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-            {/* Search input */}
-            <div className="sm:col-span-1 relative">
-              <Search className="h-4 w-4 text-slate-500 absolute left-3 top-2.5" />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white border border-stone-300 p-4 rounded-2xl shadow-sm">
+            <div className="relative">
+              <Search className="h-4 w-4 text-stone-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search name, email..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                placeholder="Search user name, email..."
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-500 font-medium"
               />
             </div>
 
-            {/* Department Filter */}
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500"
-            >
-              <option value="ALL">All Departments</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-
-            {/* Role Filter */}
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500"
+              className="bg-stone-50 border border-stone-300 text-xs text-stone-800 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 font-bold"
             >
               <option value="ALL">All Roles</option>
-              <option value="OWNER">Owner</option>
-              <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
-              <option value="MEMBER">Member</option>
+              <option value="SUPER_ADMIN">Super Admin</option>
+              <option value="ORGANIZATION_ADMIN">Organization Admin</option>
+              <option value="EXECUTIVE">Executive</option>
+              <option value="DEPARTMENT_MANAGER">Department Manager</option>
+              <option value="ANALYST">Analyst</option>
             </select>
 
-            {/* Status Filter */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500"
+              className="bg-stone-50 border border-stone-300 text-xs text-stone-800 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 font-bold"
             >
               <option value="ALL">All Statuses</option>
               <option value="active">Active</option>
@@ -236,15 +257,15 @@ export default function UserManagementPage() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-white border border-stone-300 rounded-3xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+              <table className="w-full text-left text-xs text-stone-700">
+                <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
                   <tr>
                     <th className="p-4">User</th>
                     <th className="p-4">Designation</th>
-                    <th className="p-4">Department</th>
-                    <th className="p-4">Role</th>
+                    <th className="p-4">Assigned Department</th>
+                    <th className="p-4">Assigned Role</th>
                     <th className="p-4">Status</th>
                     <th className="p-4 text-right">Actions</th>
                   </tr>
@@ -254,7 +275,7 @@ export default function UserManagementPage() {
                     <tr key={user.id} className="hover:bg-slate-800/40 transition">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-300 text-sm">
+                          <div className="h-9 w-9 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center font-bold text-emerald-300 text-sm">
                             {user.name.charAt(0)}
                           </div>
                           <div>
@@ -268,7 +289,7 @@ export default function UserManagementPage() {
 
                       <td className="p-4">
                         {user.department ? (
-                          <span className="bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-300 text-[11px]">
+                          <span className="bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-200 text-[11px] font-semibold">
                             {user.department.name}
                           </span>
                         ) : (
@@ -277,28 +298,18 @@ export default function UserManagementPage() {
                       </td>
 
                       <td className="p-4">
-                        <span
-                          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase ${
-                            user.role === "OWNER"
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                              : user.role === "ADMIN"
-                              ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                              : user.role === "MANAGER"
-                              ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                              : "bg-slate-800 text-slate-400"
-                          }`}
-                        >
-                          {user.role}
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                          {user.role.replace("_", " ")}
                         </span>
                       </td>
 
                       <td className="p-4">
                         {user.status === "active" ? (
-                          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                             <CheckCircle2 className="h-3 w-3" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                             <XCircle className="h-3 w-3" /> Deactivated
                           </span>
                         )}
@@ -307,22 +318,22 @@ export default function UserManagementPage() {
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => setSelectedUser(user)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs"
-                            title="Manage User Profile"
+                            onClick={() => openEditModal(user)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1"
+                            title="Edit Role / Department"
                           >
-                            <Edit className="h-3.5 w-3.5" />
+                            <Edit className="h-3.5 w-3.5" /> Edit
                           </button>
                           <button
                             onClick={() => handleToggleDeactivate(user.id)}
-                            className={`p-1.5 rounded-lg text-xs font-semibold ${
+                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 ${
                               user.status === "active"
                                 ? "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
                                 : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
                             }`}
-                            title={user.status === "active" ? "Deactivate User" : "Reactivate User"}
                           >
                             {user.status === "active" ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
+                            <span>{user.status === "active" ? "Deactivate" : "Activate"}</span>
                           </button>
                         </div>
                       </td>
@@ -335,16 +346,25 @@ export default function UserManagementPage() {
         </main>
       </div>
 
-      {/* CREATE USER MODAL */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      {/* CREATE / EDIT USER MODAL */}
+      {(showCreateModal || editingUser) && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
-            onSubmit={handleCreateUser}
-            className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl"
+            onSubmit={editingUser ? handleUpdateUser : handleCreateUser}
+            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">Create New Organization User</h3>
-              <button type="button" onClick={() => setShowCreateModal(false)} className="text-slate-400 text-xs">
+              <h3 className="text-base font-bold text-white">
+                {editingUser ? "Edit User, Assign Role & Department" : "Create New Admin User"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingUser(null);
+                }}
+                className="text-slate-400 text-xs"
+              >
                 ✕
               </button>
             </div>
@@ -355,9 +375,9 @@ export default function UserManagementPage() {
                 <input
                   type="text"
                   required
-                  value={newUserName}
-                  onChange={(e) => setNewUserName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
                 />
               </div>
 
@@ -366,9 +386,9 @@ export default function UserManagementPage() {
                 <input
                   type="email"
                   required
-                  value={newUserEmail}
-                  onChange={(e) => setNewUserEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                  value={userEmail}
+                  onChange={(e) => setUserEmail(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
                 />
               </div>
 
@@ -376,40 +396,40 @@ export default function UserManagementPage() {
                 <label className="block text-slate-400 font-semibold mb-1">Designation</label>
                 <input
                   type="text"
-                  value={newUserDesignation}
-                  onChange={(e) => setNewUserDesignation(e.target.value)}
-                  placeholder="e.g. Senior Business Analyst"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                  value={userDesignation}
+                  onChange={(e) => setUserDesignation(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Department</label>
+                  <label className="block text-slate-400 font-semibold mb-1">Assign Role</label>
                   <select
-                    value={newUserDeptId}
-                    onChange={(e) => setNewUserDeptId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                    value={userRole}
+                    onChange={(e) => setUserRole(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
                   >
-                    <option value="">Select Dept</option>
+                    <option value="SUPER_ADMIN">Super Admin</option>
+                    <option value="ORGANIZATION_ADMIN">Organization Admin</option>
+                    <option value="EXECUTIVE">Executive</option>
+                    <option value="DEPARTMENT_MANAGER">Department Manager</option>
+                    <option value="ANALYST">Analyst</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-semibold mb-1">Assign Department</label>
+                  <select
+                    value={userDeptId}
+                    onChange={(e) => setUserDeptId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  >
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
                       </option>
                     ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Role</label>
-                  <select
-                    value={newUserRole}
-                    onChange={(e) => setNewUserRole(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
-                  >
-                    <option value="MEMBER">Member</option>
-                    <option value="MANAGER">Manager</option>
-                    <option value="ADMIN">Admin</option>
                   </select>
                 </div>
               </div>
@@ -418,13 +438,19 @@ export default function UserManagementPage() {
             <div className="pt-4 border-t border-slate-800 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="bg-slate-800 px-4 py-2 rounded-xl text-xs"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setEditingUser(null);
+                }}
+                className="bg-slate-800 px-4 py-2 rounded-xl text-xs font-semibold text-slate-300"
               >
                 Cancel
               </button>
-              <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-xl text-xs font-semibold">
-                Create User
+              <button
+                type="submit"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30"
+              >
+                {editingUser ? "Update User & Assign" : "Create User"}
               </button>
             </div>
           </form>

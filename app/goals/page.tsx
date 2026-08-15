@@ -1,94 +1,146 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
-import { Trophy, Plus, Calendar, User, ArrowUpRight } from "lucide-react";
-import { mockGoals } from "@/lib/mock-data";
+import {
+  Target,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
+  TrendingUp,
+  UserCheck,
+  Zap,
+  Activity,
+  Plus,
+} from "lucide-react";
 
-export default function GoalsPage() {
-  const [goals, setGoals] = useState(mockGoals);
+export default function GoalsAndActionsPage() {
+  const [activeTab, setActiveTab] = useState<"goals" | "execution" | "outcomes">("goals");
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <Sidebar currentRole="ORGANIZATION_ADMIN" />
+    <div className="flex h-screen bg-[#e4dac9] text-stone-900 overflow-hidden selection:bg-emerald-500">
+      <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Header title="Strategic Goals" subtitle="Target progress %, deadline tracking & milestone completion" />
+        <Header title="Goals, Execution & Outcome Tracking" subtitle="Intelligence Loop Final Stages: Goals ➔ Action Execution ➔ Outcome Tracking" />
 
-        <main className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
-          {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <div>
-              <h2 className="text-xl font-bold text-white">Company & Department Goals</h2>
-              <p className="text-xs text-slate-400">Track key milestones, progress percentages, and deadlines</p>
+        <main className="p-6 max-w-7xl mx-auto w-full space-y-8">
+          {/* Top Banner */}
+          <div className="bg-white border border-stone-300 p-6 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider">
+                <Target className="h-3.5 w-3.5" />
+                <span>Execution Flywheel • Final Stage</span>
+              </div>
+              <h1 className="text-3xl font-black text-stone-900 tracking-tight">
+                Goals, Action Execution & Outcome Tracking
+              </h1>
+              <p className="text-xs text-stone-600">
+                Assign actions, set targets, monitor live execution, and measure post-action business outcomes.
+              </p>
             </div>
-            <button
-              onClick={() => alert("Goal Creation Dialog...")}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-600/30 transition"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Define New Goal</span>
-            </button>
+
+            {/* Tab Switcher */}
+            <div className="flex bg-stone-100 p-1 rounded-xl border border-stone-300">
+              <button
+                onClick={() => setActiveTab("goals")}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                  activeTab === "goals"
+                    ? "bg-emerald-600 text-white shadow-md"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                Goals & Actions
+              </button>
+              <button
+                onClick={() => setActiveTab("execution")}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                  activeTab === "execution"
+                    ? "bg-emerald-600 text-white shadow-md"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                Action Execution Hub
+              </button>
+              <button
+                onClick={() => setActiveTab("outcomes")}
+                className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                  activeTab === "outcomes"
+                    ? "bg-emerald-600 text-white shadow-md"
+                    : "text-stone-600 hover:text-stone-900"
+                }`}
+              >
+                Outcome Tracking Flywheel
+              </button>
+            </div>
           </div>
 
-          {/* Goals List */}
-          <div className="space-y-4">
-            {goals.map((goal) => (
-              <div
-                key={goal.id}
-                className="bg-slate-900 border border-slate-800 hover:border-slate-700 p-6 rounded-2xl space-y-4 transition"
-              >
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      <Trophy className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">{goal.name}</h3>
-                      <p className="text-xs text-slate-400">{goal.description}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-6 text-xs text-slate-400">
-                    <div>
-                      <span className="block text-[10px] uppercase text-slate-500 font-semibold">Owner</span>
-                      <span className="text-white font-semibold">{goal.owner}</span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] uppercase text-slate-500 font-semibold">Target</span>
-                      <span className="text-white font-bold">
-                        {goal.metric === "Revenue" ? `₹ ${(goal.targetValue / 100000).toFixed(1)}L` : goal.targetValue}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-[10px] uppercase text-slate-500 font-semibold">Deadline</span>
-                      <span className="text-indigo-400 font-medium">{goal.endDate}</span>
-                    </div>
-                  </div>
+          {/* Goals Tab */}
+          {activeTab === "goals" && (
+            <div className="space-y-4">
+              <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full uppercase">
+                    Active Goal • Marketing Optimization
+                  </span>
+                  <span className="text-xs font-mono text-stone-500 font-bold">Assigned to Marketing Team</span>
                 </div>
-
-                {/* Progress Bar */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Progress: <strong className="text-white">{goal.progress}%</strong></span>
-                    <span className="text-slate-400">
-                      Current: <strong className="text-emerald-400">{goal.metric === "Revenue" ? `₹ ${(goal.currentValue / 100000).toFixed(1)}L` : goal.currentValue}</strong>
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-950 rounded-full h-3 border border-slate-800 p-0.5">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        goal.progress >= 70
-                          ? "bg-gradient-to-r from-indigo-500 to-emerald-400"
-                          : "bg-gradient-to-r from-amber-500 to-rose-500"
-                      }`}
-                      style={{ width: `${goal.progress}%` }}
-                    ></div>
-                  </div>
+                <h3 className="text-lg font-bold text-stone-900">
+                  Reduce CAC to $118.00 via Retargeting Campaign
+                </h3>
+                <p className="text-xs text-stone-600">
+                  Target CAC reduction from $142.80 to $118.00 within 14 days by shifting Meta budget to search retargeting.
+                </p>
+                <div className="pt-2 flex items-center justify-between border-t border-stone-200 text-xs text-stone-600">
+                  <span>Progress: 65% Completed</span>
+                  <button
+                    onClick={() => setActiveTab("outcomes")}
+                    className="text-emerald-700 font-bold hover:underline"
+                  >
+                    View Business Outcome Impact →
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {/* Execution Hub Tab */}
+          {activeTab === "execution" && (
+            <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
+              <h3 className="text-lg font-bold text-stone-900">Live Action Task Execution</h3>
+              <p className="text-xs text-stone-600">Real-time status of assigned team tasks.</p>
+              <div className="p-4 bg-stone-50 border border-stone-200 rounded-2xl text-xs space-y-2">
+                <div className="flex items-center justify-between font-bold text-stone-900">
+                  <span>1. Reallocate $15,000 ad budget</span>
+                  <span className="text-emerald-700">Completed</span>
+                </div>
+                <div className="flex items-center justify-between text-stone-700 font-medium">
+                  <span>2. Deploy LinkedIn Retargeting Pixel</span>
+                  <span className="text-amber-700">In Progress (80%)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Outcomes Tab */}
+          {activeTab === "outcomes" && (
+            <div className="bg-white border border-emerald-300 p-6 rounded-3xl space-y-4 shadow-sm">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <span>Outcome Flywheel: Fed back into Business Health Scorecard!</span>
+              </div>
+              <p className="text-xs text-stone-600">
+                Action execution lowered CAC to $119.50, driving +$37k MRR expansion and boosting Business Health to 94.8/100.
+              </p>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 bg-emerald-600 text-white font-bold text-xs px-4 py-2 rounded-xl shadow"
+              >
+                <span>Return to Main Dashboard →</span>
+              </Link>
+            </div>
+          )}
         </main>
       </div>
     </div>

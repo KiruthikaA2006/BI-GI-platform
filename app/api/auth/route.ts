@@ -38,10 +38,17 @@ export async function POST(req: Request) {
       cookieStore.set("org_session", JSON.stringify(userSession), { path: "/" });
     }
 
+    let redirectUrl = "/dashboard";
+    if (chosenRole === Role.SUPER_ADMIN) redirectUrl = "/admin/dashboard";
+    else if (chosenRole === Role.EXECUTIVE) redirectUrl = "/executive/command-center";
+    else if (chosenRole === Role.DEPARTMENT_MANAGER) redirectUrl = "/manager/dashboard";
+    else if (chosenRole === Role.ANALYST) redirectUrl = "/analyst/dashboard";
+    else if (chosenRole === Role.ORGANIZATION_ADMIN) redirectUrl = "/dashboard";
+
     return NextResponse.json({
       success: true,
       message: `Successfully authenticated as ${chosenRole}`,
-      redirectUrl: chosenRole === Role.SUPER_ADMIN ? "/admin/dashboard" : "/dashboard",
+      redirectUrl,
       user: userSession,
     });
   } catch (error) {

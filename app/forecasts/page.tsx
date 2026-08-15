@@ -1,133 +1,74 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
-import { TrendingUp, Sparkles, AlertCircle, ArrowUpRight } from "lucide-react";
 import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
-import { mockForecastData } from "@/lib/mock-data";
+  TrendingUp,
+  Sparkles,
+  ArrowRight,
+  Target,
+  BarChart2,
+  Sliders,
+  CheckCircle2,
+  Lightbulb,
+} from "lucide-react";
 
 export default function ForecastsPage() {
-  const formatCurrency = (val: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(val);
-
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-100">
-      <Sidebar currentRole="ORGANIZATION_ADMIN" />
+    <div className="flex h-screen bg-[#e4dac9] text-stone-900 overflow-hidden selection:bg-pink-500">
+      <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Header title="Predictive Growth Forecasting" subtitle="Statistical & ML-based revenue projection & trend modelling" />
+        <Header title="Forecasting — Predictive ML Models" subtitle="Intelligence Loop Stage 1: 'What happens next?'" />
 
-        <main className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
-          {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <div>
-              <h2 className="text-xl font-bold text-white">Revenue & Sales Predictive Telemetry</h2>
-              <p className="text-xs text-slate-400">Comparing actual historical metrics against 6-month predictive projection</p>
+        <main className="p-6 max-w-7xl mx-auto w-full space-y-8">
+          {/* Top Banner */}
+          <div className="bg-white border border-stone-300 p-6 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-800 text-xs font-bold uppercase tracking-wider">
+                <TrendingUp className="h-3.5 w-3.5" />
+                <span>Execution Loop Step 1 • Predictive Analytics</span>
+              </div>
+              <h1 className="text-3xl font-black text-stone-900 tracking-tight flex items-center gap-3">
+                <span>FORECASTING</span>
+                <span className="text-xs font-normal text-stone-600 bg-stone-100 border border-stone-300 px-3 py-1 rounded-xl">
+                  "What happens next?"
+                </span>
+              </h1>
+              <p className="text-xs text-stone-600 max-w-xl">
+                Combines KPI Engine convergence metrics & AI Root Cause Analysis drivers to project 30/60/90-day growth revenue & churn trajectories.
+              </p>
             </div>
-            <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1.5 rounded-xl text-xs text-indigo-300">
-              <Sparkles className="h-4 w-4 text-indigo-400" />
-              <span>Model Confidence: 94.8% (Linear Exponential Smoothing)</span>
-            </div>
+
+            <Link
+              href="/ai-insights/recommendations"
+              className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-5 py-3 rounded-xl shadow transition flex items-center gap-2"
+            >
+              <Lightbulb className="h-4 w-4" />
+              <span>Proceed to AI Recommendation →</span>
+            </Link>
           </div>
 
-          {/* Forecast Chart */}
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-white">Actual vs Predicted Revenue Trajectory (Q3 2026 - Q1 2027)</h3>
-                <p className="text-xs text-slate-400">Shaded area represents 95% statistical confidence interval</p>
-              </div>
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-1.5 text-indigo-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-indigo-500"></span>
-                  <span>Actual Revenue</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-purple-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-purple-500"></span>
-                  <span>Predicted Value</span>
-                </div>
-              </div>
+          {/* Forecasting Scenarios */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-3 shadow-sm">
+              <span className="text-[10px] font-extrabold uppercase text-stone-500">Baseline Scenario (Expected)</span>
+              <div className="text-2xl font-black text-stone-900">$278,000 <span className="text-xs text-stone-500">MRR by Q4</span></div>
+              <p className="text-xs text-stone-600">Maintains current marketing efficiency and 1.8% monthly churn</p>
             </div>
 
-            <div className="h-96 w-full pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mockForecastData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorConf" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="period" stroke="#64748b" tick={{ fontSize: 12 }} />
-                  <YAxis
-                    stroke="#64748b"
-                    tick={{ fontSize: 11 }}
-                    tickFormatter={(val) => `₹${(val / 100000).toFixed(0)}L`}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }}
-                    formatter={(val: any) => [val ? `₹ ${Number(val).toLocaleString()}` : "Pending Data", ""]}
-                  />
-                  <Area type="monotone" dataKey="upperBound" stroke="transparent" fill="url(#colorConf)" />
-                  <Line type="monotone" dataKey="actual" stroke="#6366f1" strokeWidth={3} dot={{ r: 5 }} />
-                  <Line type="monotone" dataKey="predicted" stroke="#a855f7" strokeWidth={3} strokeDasharray="5 5" dot={{ r: 5 }} />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="bg-white border border-emerald-300 p-5 rounded-2xl space-y-3 shadow-sm">
+              <span className="text-[10px] font-extrabold uppercase text-emerald-800">Optimized Growth Scenario</span>
+              <div className="text-2xl font-black text-emerald-700">$315,000 <span className="text-xs text-stone-500">MRR by Q4</span></div>
+              <p className="text-xs text-stone-600">Assumes AI Recommendations are executed to reduce CAC by 15%</p>
             </div>
-          </div>
 
-          {/* Table Breakdown */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h3 className="text-base font-bold text-white mb-4">Detailed Monthly Forecast Table</h3>
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
-                <tr>
-                  <th className="p-3">Forecast Period</th>
-                  <th className="p-3">Actual Value</th>
-                  <th className="p-3">Predicted Value</th>
-                  <th className="p-3">Lower Bound (95%)</th>
-                  <th className="p-3">Upper Bound (95%)</th>
-                  <th className="p-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                {mockForecastData.map((row) => (
-                  <tr key={row.period} className="hover:bg-slate-800/40">
-                    <td className="p-3 font-semibold text-white">{row.period}</td>
-                    <td className="p-3 font-bold text-indigo-400">
-                      {row.actual ? formatCurrency(row.actual) : "—"}
-                    </td>
-                    <td className="p-3 font-bold text-purple-400">{formatCurrency(row.predicted)}</td>
-                    <td className="p-3 text-slate-400">{formatCurrency(row.lowerBound)}</td>
-                    <td className="p-3 text-slate-400">{formatCurrency(row.upperBound)}</td>
-                    <td className="p-3">
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                          row.actual ? "bg-emerald-500/20 text-emerald-300" : "bg-purple-500/20 text-purple-300"
-                        }`}
-                      >
-                        {row.actual ? "Historical" : "Projected"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="bg-white border border-amber-300 p-5 rounded-2xl space-y-3 shadow-sm">
+              <span className="text-[10px] font-extrabold uppercase text-amber-800">Stress Test Scenario</span>
+              <div className="text-2xl font-black text-amber-700">$240,000 <span className="text-xs text-stone-500">MRR by Q4</span></div>
+              <p className="text-xs text-stone-600">Simulates 10% increase in ad channel competition</p>
+            </div>
           </div>
         </main>
       </div>

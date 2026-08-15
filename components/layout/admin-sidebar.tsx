@@ -5,30 +5,36 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Building2,
   Users,
-  CreditCard,
-  Activity,
+  Building,
+  ShieldCheck,
+  Database,
+  Lock,
+  Settings,
   History,
+  User,
   Shield,
   LogOut,
-  Zap,
 } from "lucide-react";
 
 export function AdminSidebar() {
   const pathname = usePathname();
 
+  // Admin menu tree matching Screenshot 3
   const adminNav = [
-    { title: "Admin Overview", href: "/admin/dashboard", icon: LayoutDashboard },
-    { title: "Organizations", href: "/admin/organizations", icon: Building2 },
-    { title: "Users & RBAC", href: "/admin/users", icon: Users },
-    { title: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
-    { title: "System Monitoring", href: "/admin/system-monitoring", icon: Activity },
-    { title: "Platform Audit Logs", href: "/admin/audit-logs", icon: History },
+    { title: "Overview", href: "/admin/dashboard", icon: LayoutDashboard },
+    { title: "Users", href: "/admin/users", icon: Users },
+    { title: "Departments", href: "/admin/departments", icon: Building },
+    { title: "Roles & Permissions", href: "/admin/roles-permissions", icon: ShieldCheck },
+    { title: "Data Sources", href: "/admin/data-sources", icon: Database },
+    { title: "Data Access", href: "/admin/data-access", icon: Lock },
+    { title: "Organization Settings", href: "/admin/organization-settings", icon: Settings },
+    { title: "Audit Logs", href: "/admin/audit-logs", icon: History },
+    { title: "Profile", href: "/admin/profile", icon: User },
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between h-screen sticky top-0 z-40 text-slate-300">
+    <aside className="w-64 bg-black border-r border-neutral-800 flex flex-col justify-between h-screen sticky top-0 z-40 text-neutral-300 shadow-2xl">
       {/* Top Header Logo */}
       <div className="p-5 flex items-center justify-between border-b border-slate-800 bg-slate-950/60">
         <Link href="/admin/dashboard" className="flex items-center gap-3">
@@ -44,16 +50,16 @@ export function AdminSidebar() {
         </Link>
       </div>
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      {/* Navigation Tree */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 custom-scrollbar">
         <div>
-          <p className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Super Admin Controls
+          <p className="px-3 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2">
+            ADMIN
           </p>
           <nav className="space-y-1">
             {adminNav.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname.startsWith(item.href);
+              const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
@@ -75,7 +81,7 @@ export function AdminSidebar() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer User Avatar */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/40">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -83,8 +89,8 @@ export function AdminSidebar() {
               SA
             </div>
             <div>
-              <p className="text-xs font-bold text-white">Super Admin</p>
-              <p className="text-[10px] text-emerald-400">Platform Scope</p>
+              <p className="text-xs font-bold text-white">Kiruthika Anand</p>
+              <p className="text-[10px] text-emerald-400">Super Admin</p>
             </div>
           </div>
           <Link href="/admin/login" className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 transition">
