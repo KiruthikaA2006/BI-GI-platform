@@ -40,19 +40,19 @@ export function MainDashboard() {
           setSelectedRole(data.user.role);
           try {
             localStorage.setItem("active_role", data.user.role);
-          } catch (e) {}
+          } catch (e) { }
         } else {
           try {
             const storedRole = localStorage.getItem("active_role");
             if (storedRole) setSelectedRole(storedRole);
-          } catch (e) {}
+          } catch (e) { }
         }
       })
       .catch(() => {
         try {
           const storedRole = localStorage.getItem("active_role");
           if (storedRole) setSelectedRole(storedRole);
-        } catch (e) {}
+        } catch (e) { }
       });
   }, []);
 

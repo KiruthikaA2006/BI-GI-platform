@@ -53,19 +53,19 @@ export function Sidebar({ currentRole }: SidebarProps) {
           setActiveRole(data.user.role);
           try {
             localStorage.setItem("active_role", data.user.role);
-          } catch (e) {}
+          } catch (e) { }
         } else {
           try {
             const stored = localStorage.getItem("active_role");
             if (stored) setActiveRole(stored);
-          } catch (e) {}
+          } catch (e) { }
         }
       })
       .catch(() => {
         try {
           const stored = localStorage.getItem("active_role");
           if (stored) setActiveRole(stored);
-        } catch (e) {}
+        } catch (e) { }
       });
   }, []);
 
@@ -171,17 +171,16 @@ export function Sidebar({ currentRole }: SidebarProps) {
         <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800 flex items-center justify-between">
           <span className="text-[10px] text-neutral-400 font-bold uppercase">Role Scope:</span>
           <span
-            className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-              normalizedRole === "SUPER_ADMIN"
+            className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${normalizedRole === "SUPER_ADMIN"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
                 : normalizedRole === "EXECUTIVE"
-                ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                : normalizedRole === "DEPARTMENT_MANAGER"
-                ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                : normalizedRole === "ANALYST"
-                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
-                : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-            }`}
+                  ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
+                  : normalizedRole === "DEPARTMENT_MANAGER"
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                    : normalizedRole === "ANALYST"
+                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                      : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+              }`}
           >
             {normalizedRole.replace("_", " ")}
           </span>
@@ -202,11 +201,10 @@ export function Sidebar({ currentRole }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    isActive
+                  className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${isActive
                       ? "bg-neutral-900 text-white font-bold border-l-2 border-amber-400 shadow-md shadow-amber-400/10"
                       : "hover:bg-neutral-900/80 hover:text-white text-neutral-400"
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className={`h-4 w-4 ${isActive ? "text-amber-400" : "text-neutral-400"}`} />
@@ -214,9 +212,8 @@ export function Sidebar({ currentRole }: SidebarProps) {
                   </div>
                   {item.badge && (
                     <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                        item.badge === "AI" ? "bg-purple-500/20 text-purple-300" : "bg-neutral-800 text-neutral-400"
-                      }`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${item.badge === "AI" ? "bg-purple-500/20 text-purple-300" : "bg-neutral-800 text-neutral-400"
+                        }`}
                     >
                       {item.badge}
                     </span>
@@ -240,12 +237,12 @@ export function Sidebar({ currentRole }: SidebarProps) {
                 {normalizedRole === "EXECUTIVE"
                   ? "CEO Executive"
                   : normalizedRole === "ANALYST"
-                  ? "Data Analyst"
-                  : normalizedRole === "DEPARTMENT_MANAGER"
-                  ? "Sales Manager"
-                  : normalizedRole === "SUPER_ADMIN"
-                  ? "Platform Admin"
-                  : "Kiruthika Anand"}
+                    ? "Data Analyst"
+                    : normalizedRole === "DEPARTMENT_MANAGER"
+                      ? "Sales Manager"
+                      : normalizedRole === "SUPER_ADMIN"
+                        ? "Platform Admin"
+                        : "Kiruthika Anand"}
               </span>
               <span className="block text-[9px] text-neutral-400 truncate">{normalizedRole}</span>
             </div>
@@ -255,7 +252,7 @@ export function Sidebar({ currentRole }: SidebarProps) {
             onClick={() => {
               try {
                 localStorage.removeItem("active_role");
-              } catch (e) {}
+              } catch (e) { }
             }}
             className="text-xs text-neutral-400 hover:text-white font-semibold"
           >
