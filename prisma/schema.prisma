@@ -1,0 +1,401 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ====================
+// ORGANIZATION
+// ====================
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  ownerId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     OrganizationMember[]
+  departments Department[]
+  invitations OrganizationInvitation[]
+  users       User[]
+  dataSources DataSource[]
+  datasets    Dataset[]
+  kpis        KPI[]
+  dashboards  Dashboard[]
+  goals       Goal[]
+  reports     Report[]
+  forecasts   Forecast[]
+  insights    Insight[]
+  alerts      Alert[]
+  auditLogs   AuditLog[]
+}
+
+// ====================
+// USERS & RBAC
+// ====================
+
+enum Role {
+  SUPER_ADMIN
+  ORGANIZATION_ADMIN
+  EXECUTIVE
+  DEPARTMENT_MANAGER
+  ANALYST
+}
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String?
+  name           String
+  email          String       @unique
+  phone          String?
+  designation    String?
+  passwordHash   String
+  role           Role         @default(ANALYST)
+  status         String       @default("active")
+  timezone       String       @default("Asia/Kolkata")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  memberships    OrganizationMember[]
+  dataSources    DataSource[]
+  dashboards     Dashboard[]
+  reports        Report[]
+  auditLogs      AuditLog[]
+
+  @@index([organizationId])
+}
+
+// ====================
+// DEPARTMENTS
+// ====================
+
+model Department {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members        OrganizationMember[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+// ====================
+// ORGANIZATION MEMBERSHIP (MULTI-TENANT)
+// ====================
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  departmentId   String?
+  role           String       @default("MEMBER") // OWNER, ADMIN, MANAGER, MEMBER
+  status         String       @default("active") // active, invited, deactivated
+  phone          String?
+  designation    String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([departmentId])
+}
+
+// ====================
+// ORGANIZATION INVITATIONS
+// ====================
+
+model OrganizationInvitation {
+  id             String       @id @default(cuid())
+  organizationId String
+  email          String
+  name           String?
+  role           String       @default("MEMBER")
+  departmentId   String?
+  tokenHash      String
+  status         String       @default("pending") // pending, accepted, expired, revoked
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  invitedBy      String
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+// ====================
+// DATA SOURCES
+// ====================
+
+enum DataSourceType {
+  CSV
+  XLSX
+  REST_API
+  DATABASE
+  CRM
+  SUPPORT
+  PAYMENT
+  ACCOUNTING
+}
+
+model DataSource {
+  id             String         @id @default(cuid())
+  organizationId String
+  ownerId        String?
+  name           String
+  type           DataSourceType
+  status         String         @default("connected")
+  syncFrequency  String?
+  dataVolume     Int            @default(0)
+  lastSyncAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User?          @relation(fields: [ownerId], references: [id])
+  datasets       Dataset[]
+
+  @@index([organizationId])
+}
+
+// ====================
+// DATASETS
+// ====================
+
+model Dataset {
+  id             String       @id @default(cuid())
+  organizationId String
+  dataSourceId   String?
+  name           String
+  description    String?
+  rowCount       Int          @default(0)
+  columns        Json?
+  data           Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataSource     DataSource?  @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+}
+
+// ====================
+// KPIs
+// ====================
+
+model KPI {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  metric         String
+  value          Float        @default(0)
+  target         Float?
+  unit           String?
+  category       String?
+  trend          Float?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dashboardKPIs  DashboardKPI[]
+
+  @@index([organizationId])
+}
+
+// ====================
+// DASHBOARDS
+// ====================
+
+model Dashboard {
+  id             String       @id @default(cuid())
+  organizationId String
+  ownerId        String?
+  name           String
+  description    String?
+  layout         Json?
+  isPublic       Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User?        @relation(fields: [ownerId], references: [id])
+  kpis           DashboardKPI[]
+
+  @@index([organizationId])
+}
+
+model DashboardKPI {
+  id          String    @id @default(cuid())
+  dashboardId String
+  kpiId       String
+  position    Int       @default(0)
+
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  kpi         KPI       @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+
+  @@unique([dashboardId, kpiId])
+}
+
+// ====================
+// GOALS
+// ====================
+
+model Goal {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  metric         String
+  targetValue    Float
+  currentValue   Float        @default(0)
+  startDate      DateTime
+  endDate        DateTime
+  status         String       @default("active")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// ====================
+// REPORTS
+// ====================
+
+enum ReportFrequency {
+  NONE
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model Report {
+  id             String          @id @default(cuid())
+  organizationId String
+  ownerId        String?
+  name           String
+  description    String?
+  frequency      ReportFrequency @default(NONE)
+  format         String          @default("PDF")
+  content        Json?
+  scheduledAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner          User?           @relation(fields: [ownerId], references: [id])
+
+  @@index([organizationId])
+}
+
+// ====================
+// FORECASTS
+// ====================
+
+model Forecast {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  metric         String
+  period         String
+  actualValue    Float?
+  predictedValue Float?
+  confidence     Float?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// ====================
+// AI INSIGHTS
+// ====================
+
+enum InsightType {
+  TREND
+  ANOMALY
+  PREDICTION
+  RECOMMENDATION
+  RISK
+  SUMMARY
+}
+
+model Insight {
+  id             String       @id @default(cuid())
+  organizationId String
+  title          String
+  description    String
+  type           InsightType
+  severity       String?
+  metric         String?
+  recommendation String?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// ====================
+// ALERTS
+// ====================
+
+model Alert {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  metric         String
+  condition      String
+  threshold      Float?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// ====================
+// AUDIT LOGS
+// ====================
+
+model AuditLog {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String?
+  action         String
+  entity         String?
+  entityId       String?
+  oldValue       Json?
+  newValue       Json?
+  ipAddress      String?
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+}
