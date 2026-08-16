@@ -41,7 +41,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const res = await fetch("/api/dashboard/stats");
+      const res = await fetch(`/api/dashboard/stats?orgId=${encodeURIComponent(orgId)}`);
       const data = await res.json();
       if (data.success) {
         setStats(data);

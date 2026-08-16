@@ -13,6 +13,7 @@ import {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const qOrgId = searchParams.get("orgId");
     const region = searchParams.get("region") || "All Regions";
     const department = searchParams.get("department") || "All Departments";
     const product = searchParams.get("product") || "All Products";
@@ -33,6 +34,7 @@ export async function GET(req: Request) {
     }
 
     const activeOrgId =
+      qOrgId ||
       (activeOrgIdCookie ? decodeURIComponent(activeOrgIdCookie) : null) ||
       userSession?.organizationId ||
       "";

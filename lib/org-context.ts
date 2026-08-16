@@ -185,6 +185,7 @@ export function setActiveOrganization(org: Organization): void {
     return;
   }
 
+  clearStatsCache();
   localStorage.setItem("active_org_id", org.id);
   localStorage.setItem("active_org_name", org.name);
   localStorage.setItem("active_org_slug", org.slug || org.id);
