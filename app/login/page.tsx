@@ -17,9 +17,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     const org = getActiveOrganization();
-    setActiveOrgState(org);
-    const domain = org.slug ? `${org.slug}.com` : "company.com";
-    setEmail(`admin@${domain}`);
+    if (org) {
+      setActiveOrgState(org);
+      const domain = org.slug ? `${org.slug}.com` : "company.com";
+      setEmail(`admin@${domain}`);
+    }
   }, []);
 
   const roleOptions = [

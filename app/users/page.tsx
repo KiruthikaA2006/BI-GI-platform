@@ -1,26 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AdminSidebar } from "@/components/layout/admin-sidebar";
+import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
-import { AdminFlowNavigator } from "@/components/layout/admin-flow-navigator";
 import {
   Users,
   UserPlus,
   Mail,
   Search,
-  Filter,
-  Shield,
-  Building,
   CheckCircle2,
   XCircle,
-  Key,
   UserX,
   UserCheck,
   Edit,
   Building2,
-  UserCog,
+  Shield,
 } from "lucide-react";
+import { getActiveOrganization, getOrgMembers, registerOrgMember, Organization, OrgMember } from "@/lib/org-context";
 
 export interface UserItem {
   id: string;
@@ -32,9 +28,7 @@ export interface UserItem {
   department: { id: string; name: string } | null;
 }
 
-import { getActiveOrganization, getOrgMembers, registerOrgMember, Organization, OrgMember } from "@/lib/org-context";
-
-export default function AdminUsersManagementPage() {
+export default function UserManagementPage() {
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
   const [users, setUsers] = useState<UserItem[]>([]);
 
@@ -56,7 +50,7 @@ export default function AdminUsersManagementPage() {
     }
   }, []);
 
-  const [departments, setDepartments] = useState([
+  const [departments] = useState([
     { id: "dept_01", name: "Executive Engineering" },
     { id: "dept_02", name: "Sales & Marketing" },
     { id: "dept_03", name: "Business Analytics" },
@@ -181,22 +175,21 @@ export default function AdminUsersManagementPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900 selection:bg-emerald-500">
-      <AdminSidebar />
+    <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900 selection:bg-amber-500">
+      <Sidebar currentRole="ORGANIZATION_ADMIN" />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <AdminFlowNavigator />
-        <Header title="Users Management" subtitle="Admin Node: Create, Invite, Edit, Deactivate, Assign Role, Assign Department" />
+        <Header title="User Management" subtitle="Manage Organization Users, Roles, Access & Team Members" />
 
         <main className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
           {/* Top Bar with Operations Overview */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-stone-300 p-6 rounded-3xl shadow-sm">
             <div className="space-y-1">
-              <span className="text-[10px] font-extrabold uppercase text-emerald-800">Admin Architecture Node: USERS</span>
+              <span className="text-[10px] font-extrabold uppercase text-amber-800">WORKSPACE NODE: USERS</span>
               <h2 className="text-xl font-black text-stone-900 flex items-center gap-2">
-                <span>User Account Administration</span>
+                <span>User Account Management</span>
               </h2>
               <p className="text-xs text-stone-600">
-                Operations: <strong>Create</strong> • <strong>Invite</strong> • <strong>Edit</strong> • <strong>Deactivate</strong> • <strong>Assign Role</strong> • <strong>Assign Department</strong>
+                Active Organization: <strong>{activeOrg?.name}</strong> • Invite & manage member credentials, roles & permissions.
               </p>
             </div>
 
@@ -205,7 +198,7 @@ export default function AdminUsersManagementPage() {
                 onClick={() => setShowInviteModal(true)}
                 className="flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 px-4 py-2.5 rounded-xl text-xs font-bold border border-stone-300 transition"
               >
-                <Mail className="h-4 w-4 text-emerald-700" />
+                <Mail className="h-4 w-4 text-amber-700" />
                 <span>Invite User</span>
               </button>
               <button
@@ -213,7 +206,7 @@ export default function AdminUsersManagementPage() {
                   resetForm();
                   setShowCreateModal(true);
                 }}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow transition"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow transition"
               >
                 <UserPlus className="h-4 w-4" />
                 <span>Create User</span>
@@ -230,14 +223,14 @@ export default function AdminUsersManagementPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search user name, email..."
-                className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-emerald-500 font-medium"
+                className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-9 pr-3 py-2 text-xs text-stone-900 focus:outline-none focus:border-indigo-500 font-medium"
               />
             </div>
 
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="bg-stone-50 border border-stone-300 text-xs text-stone-800 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 font-bold"
+              className="bg-stone-50 border border-stone-300 text-xs text-stone-800 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 font-bold"
             >
               <option value="ALL">All Roles</option>
               <option value="SUPER_ADMIN">Super Admin</option>
@@ -250,7 +243,7 @@ export default function AdminUsersManagementPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-stone-50 border border-stone-300 text-xs text-stone-800 rounded-xl px-3 py-2 outline-none focus:border-emerald-500 font-bold"
+              className="bg-stone-50 border border-stone-300 text-xs text-stone-800 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 font-bold"
             >
               <option value="ALL">All Statuses</option>
               <option value="active">Active</option>
@@ -259,79 +252,86 @@ export default function AdminUsersManagementPage() {
           </div>
 
           {/* Users Table */}
-          <div className="bg-white border border-stone-300 rounded-3xl overflow-hidden shadow-sm">
+          <div className="bg-white border border-stone-300 rounded-3xl overflow-hidden shadow-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
+                <Users className="h-4 w-4 text-indigo-600" />
+                <span>Organization Users ({filteredUsers.length})</span>
+              </h3>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-stone-700">
                 <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
                   <tr>
-                    <th className="p-4">User</th>
-                    <th className="p-4">Designation</th>
-                    <th className="p-4">Assigned Department</th>
-                    <th className="p-4">Assigned Role</th>
-                    <th className="p-4">Status</th>
-                    <th className="p-4 text-right">Actions</th>
+                    <th className="p-3">User</th>
+                    <th className="p-3">Designation</th>
+                    <th className="p-3">Assigned Department</th>
+                    <th className="p-3">Assigned Role</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-stone-200">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-800/40 transition">
-                      <td className="p-4">
+                    <tr key={user.id} className="hover:bg-stone-50 transition">
+                      <td className="p-3">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center font-bold text-emerald-300 text-sm">
+                          <div className="h-9 w-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center font-bold text-indigo-700 text-sm">
                             {user.name.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-bold text-white text-xs block">{user.name}</span>
-                            <span className="text-[11px] text-slate-400 block">{user.email}</span>
+                            <span className="font-bold text-stone-900 text-xs block">{user.name}</span>
+                            <span className="text-[11px] text-stone-500 block">{user.email}</span>
                           </div>
                         </div>
                       </td>
 
-                      <td className="p-4 text-slate-300 font-medium">{user.designation}</td>
+                      <td className="p-3 text-stone-700 font-medium">{user.designation}</td>
 
-                      <td className="p-4">
+                      <td className="p-3">
                         {user.department ? (
-                          <span className="bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-200 text-[11px] font-semibold">
+                          <span className="bg-stone-100 border border-stone-300 px-2.5 py-1 rounded-lg text-stone-800 text-[11px] font-semibold">
                             {user.department.name}
                           </span>
                         ) : (
-                          <span className="text-slate-500 text-[11px]">Unassigned</span>
+                          <span className="text-stone-400 text-[11px]">Unassigned</span>
                         )}
                       </td>
 
-                      <td className="p-4">
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                      <td className="p-3">
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
                           {user.role.replace("_", " ")}
                         </span>
                       </td>
 
-                      <td className="p-4">
+                      <td className="p-3">
                         {user.status === "active" ? (
-                          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                             <CheckCircle2 className="h-3 w-3" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                             <XCircle className="h-3 w-3" /> Deactivated
                           </span>
                         )}
                       </td>
 
-                      <td className="p-4 text-right">
+                      <td className="p-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(user)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1"
+                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center gap-1 border border-stone-300 transition"
                             title="Edit Role / Department"
                           >
                             <Edit className="h-3.5 w-3.5" /> Edit
                           </button>
                           <button
                             onClick={() => handleToggleDeactivate(user.id)}
-                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 ${
+                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${
                               user.status === "active"
-                                ? "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
-                                : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                                ? "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                                : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                             }`}
                           >
                             {user.status === "active" ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
@@ -350,14 +350,14 @@ export default function AdminUsersManagementPage() {
 
       {/* CREATE / EDIT USER MODAL */}
       {(showCreateModal || editingUser) && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={editingUser ? handleUpdateUser : handleCreateUser}
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl"
+            className="bg-white border border-stone-300 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">
-                {editingUser ? "Edit User, Assign Role & Department" : "Create New Admin User"}
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <h3 className="text-base font-bold text-stone-900">
+                {editingUser ? "Edit User, Assign Role & Department" : "Create New User"}
               </h3>
               <button
                 type="button"
@@ -365,7 +365,7 @@ export default function AdminUsersManagementPage() {
                   setShowCreateModal(false);
                   setEditingUser(null);
                 }}
-                className="text-slate-400 text-xs"
+                className="text-stone-400 hover:text-stone-600 text-xs"
               >
                 ✕
               </button>
@@ -373,44 +373,44 @@ export default function AdminUsersManagementPage() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Full Name</label>
+                <label className="block text-stone-600 font-semibold mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Email Address</label>
+                <label className="block text-stone-600 font-semibold mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Designation</label>
+                <label className="block text-stone-600 font-semibold mb-1">Designation</label>
                 <input
                   type="text"
                   value={userDesignation}
                   onChange={(e) => setUserDesignation(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Assign Role</label>
+                  <label className="block text-stone-600 font-semibold mb-1">Assign Role</label>
                   <select
                     value={userRole}
                     onChange={(e) => setUserRole(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900"
                   >
                     <option value="SUPER_ADMIN">Super Admin</option>
                     <option value="ORGANIZATION_ADMIN">Organization Admin</option>
@@ -421,11 +421,11 @@ export default function AdminUsersManagementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Assign Department</label>
+                  <label className="block text-stone-600 font-semibold mb-1">Assign Department</label>
                   <select
                     value={userDeptId}
                     onChange={(e) => setUserDeptId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900"
                   >
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -437,25 +437,60 @@ export default function AdminUsersManagementPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end gap-2">
+            <div className="pt-4 border-t border-stone-200 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setShowCreateModal(false);
                   setEditingUser(null);
                 }}
-                className="bg-slate-800 px-4 py-2 rounded-xl text-xs font-semibold text-slate-300"
+                className="bg-stone-100 border border-stone-300 px-4 py-2 rounded-xl text-xs font-semibold text-stone-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30"
               >
                 {editingUser ? "Update User & Assign" : "Create User"}
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* INVITE USER MODAL */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-stone-300 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <h3 className="text-base font-bold text-stone-900">Invite User to Workspace</h3>
+              <button onClick={() => setShowInviteModal(false)} className="text-stone-400 hover:text-stone-600 text-xs">✕</button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-stone-600 font-semibold mb-1">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="colleague@company.com"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900"
+                />
+              </div>
+              <div>
+                <label className="block text-stone-600 font-semibold mb-1">Role Assignment</label>
+                <select className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900">
+                  <option value="ANALYST">Analyst</option>
+                  <option value="DEPARTMENT_MANAGER">Department Manager</option>
+                  <option value="EXECUTIVE">Executive</option>
+                  <option value="ORGANIZATION_ADMIN">Organization Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-stone-200 flex justify-end gap-2">
+              <button onClick={() => setShowInviteModal(false)} className="bg-stone-100 border border-stone-300 px-4 py-2 rounded-xl text-xs font-semibold text-stone-700">Cancel</button>
+              <button onClick={() => setShowInviteModal(false)} className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30">Send Invitation</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

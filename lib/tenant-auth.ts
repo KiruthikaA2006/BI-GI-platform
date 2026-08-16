@@ -19,10 +19,15 @@ export async function requireAuth(req?: Request): Promise<UserSession | null> {
   const cookieStore = await cookies();
   const orgCookie = cookieStore.get("org_session")?.value;
   const adminCookie = cookieStore.get("admin_session")?.value;
+  const activeOrgIdCookie = cookieStore.get("active_org_id")?.value;
+  const activeOrgNameCookie = cookieStore.get("active_org_name")?.value;
 
   if (adminCookie) {
     try {
-      return JSON.parse(adminCookie);
+      const parsed = JSON.parse(adminCookie);
+      if (activeOrgIdCookie) parsed.organizationId = decodeURIComponent(activeOrgIdCookie);
+      if (activeOrgNameCookie) parsed.organizationName = decodeURIComponent(activeOrgNameCookie);
+      return parsed;
     } catch (e) {
       return null;
     }
@@ -30,7 +35,10 @@ export async function requireAuth(req?: Request): Promise<UserSession | null> {
 
   if (orgCookie) {
     try {
-      return JSON.parse(orgCookie);
+      const parsed = JSON.parse(orgCookie);
+      if (activeOrgIdCookie) parsed.organizationId = decodeURIComponent(activeOrgIdCookie);
+      if (activeOrgNameCookie) parsed.organizationName = decodeURIComponent(activeOrgNameCookie);
+      return parsed;
     } catch (e) {
       return null;
     }

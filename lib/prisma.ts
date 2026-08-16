@@ -6,31 +6,23 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    return new PrismaClient({} as any);
-  }
+function createPrismaClient(): PrismaClient {
+  const directUrl =
+    process.env.DIRECT_DATABASE_URL ||
+    "postgres://2f8d2ebfcc09e496ed67ba633085345536586e9b52457936b01aef56c4c4cdcb:sk_T2-qYwae229GASIdwEiqB@db.prisma.io:5432/postgres?sslmode=require";
 
   try {
-    // If using Prisma Accelerate URL (prisma+postgres://)
-    if (connectionString.startsWith("prisma+postgres://") || connectionString.includes("accelerate.prisma-data.net")) {
-      return new PrismaClient({
-        accelerateUrl: connectionString,
-      } as any);
-    }
-
-    // If using standard raw PostgreSQL URL (postgresql:// or postgres://)
-    if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://")) {
-      const pool = new Pool({ connectionString });
-      const adapter = new PrismaPg(pool);
-      return new PrismaClient({ adapter });
-    }
-
-    return new PrismaClient({} as any);
+    const pool = new Pool({ connectionString: directUrl });
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({ adapter });
   } catch (error) {
-    console.error("Prisma Client Initialization Error:", error);
-    return new PrismaClient({} as any);
+    console.error("Prisma Client Driver Adapter Error:", error);
+    const pool = new Pool({
+      connectionString:
+        "postgres://2f8d2ebfcc09e496ed67ba633085345536586e9b52457936b01aef56c4c4cdcb:sk_T2-qYwae229GASIdwEiqB@db.prisma.io:5432/postgres?sslmode=require",
+    });
+    const adapter = new PrismaPg(pool);
+    return new PrismaClient({ adapter });
   }
 }
 

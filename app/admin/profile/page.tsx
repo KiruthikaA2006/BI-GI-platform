@@ -79,7 +79,7 @@ export default function AdminProfilePage() {
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Assigned Platform Role Scope</label>
+                <label className="block text-slate-400 font-semibold mb-1">Assigned Platform Role</label>
                 <input
                   type="text"
                   value="Super Administrator (SUPER_ADMIN)"

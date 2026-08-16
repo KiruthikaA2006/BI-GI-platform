@@ -33,6 +33,7 @@ model Organization {
   insights    Insight[]
   alerts      Alert[]
   auditLogs   AuditLog[]
+  dataImports DataImport[]
 }
 
 // ====================
@@ -398,4 +399,46 @@ model AuditLog {
 
   @@index([organizationId])
   @@index([userId])
+}
+
+// ====================
+// DATA IMPORTS & IMPORT FILES
+// ====================
+
+model DataImport {
+  id             String       @id @default(cuid())
+  organizationId String
+  datasetName    String
+  uploadedBy     String
+  status         String       @default("completed") // pending, validating, completed, failed
+  createdAt      DateTime     @default(now())
+  completedAt    DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  files          ImportFile[]
+
+  @@map("data_imports")
+  @@index([organizationId])
+}
+
+model ImportFile {
+  id             String     @id @default(cuid())
+  importId       String
+  organizationId String
+  fileName       String
+  entityType     String
+  rowCount       Int        @default(0)
+  validRows      Int        @default(0)
+  invalidRows    Int        @default(0)
+  status         String     @default("completed")
+  columns        Json?
+  sampleData     Json?
+  errors         Json?
+  createdAt      DateTime   @default(now())
+
+  import         DataImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+
+  @@map("import_files")
+  @@index([importId])
+  @@index([organizationId])
 }

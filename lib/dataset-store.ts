@@ -2,6 +2,7 @@ import { BusinessRow } from "./analytics";
 
 export interface StoredDataset {
   id: string;
+  organizationId: string;
   name: string;
   description: string;
   rowCount: number;
@@ -22,13 +23,23 @@ if (!globalForDatasetStore.allDatasets) {
 
 export function saveActiveDataset(dataset: StoredDataset) {
   globalForDatasetStore.activeDataset = dataset;
-  globalForDatasetStore.allDatasets.unshift(dataset);
+  // Replace if existing dataset with same ID or add to front
+  const idx = globalForDatasetStore.allDatasets.findIndex((d) => d.id === dataset.id);
+  if (idx >= 0) {
+    globalForDatasetStore.allDatasets[idx] = dataset;
+  } else {
+    globalForDatasetStore.allDatasets.unshift(dataset);
+  }
 }
 
-export function getActiveDataset(): StoredDataset | null {
+export function getActiveDataset(orgId?: string): StoredDataset | null {
+  if (orgId) {
+    return globalForDatasetStore.allDatasets.find((d) => d.organizationId === orgId) || null;
+  }
   return globalForDatasetStore.activeDataset || globalForDatasetStore.allDatasets[0] || null;
 }
 
-export function getAllStoredDatasets(): StoredDataset[] {
-  return globalForDatasetStore.allDatasets;
+export function getAllStoredDatasets(orgId?: string): StoredDataset[] {
+  if (!orgId) return globalForDatasetStore.allDatasets;
+  return globalForDatasetStore.allDatasets.filter((d) => d.organizationId === orgId);
 }

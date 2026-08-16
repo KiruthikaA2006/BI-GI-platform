@@ -4,6 +4,7 @@ import React from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { FileText, Download } from "lucide-react";
+import { exportToPDF } from "@/lib/export-utils";
 
 export default function ManagerReportsPage() {
   return (
@@ -20,7 +21,10 @@ export default function ManagerReportsPage() {
               <p className="text-xs text-stone-500">Weekly and monthly operational audit rollups for management review.</p>
             </div>
 
-            <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+            <button
+              onClick={() => exportToPDF("Sales & Marketing Operational Performance Report")}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2"
+            >
               <Download className="h-4 w-4" />
               <span>Export PDF Operational Report</span>
             </button>

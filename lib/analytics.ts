@@ -74,39 +74,50 @@ export function calculateExecutiveMetrics(rows: BusinessRow[], filters: Analytic
   let closedSales = 0;
 
   filtered.forEach((r) => {
-    const rev = Number(r.revenue || r.amount || r.sales || 0);
-    const exp = Number(r.expense || r.cost || 0);
-    totalRevenue += isNaN(rev) ? 0 : rev;
-    totalExpenses += isNaN(exp) ? 0 : exp;
+    // Detect expenses vs revenues from CSV fields
+    const isExpenseRow = Boolean(r.expense_id || r.category || r.approved_by || r.expense || r.cost);
+    const amountVal = Number(r.amount_inr || r.amount || r.deal_value_inr || r.revenue || r.expense || 0);
+
+    if (isExpenseRow) {
+      totalExpenses += isNaN(amountVal) ? 0 : amountVal;
+    } else {
+      totalRevenue += isNaN(amountVal) ? 0 : amountVal;
+      if (amountVal > 0) closedSales++;
+    }
 
     if (r.customer || r.customer_id) {
       uniqueCustomers.add(String(r.customer || r.customer_id));
     }
-
-    if (rev > 0) closedSales++;
   });
 
   const netProfit = totalRevenue - totalExpenses;
-  const customerCount = uniqueCustomers.size || filtered.length;
+  const customerCount = uniqueCustomers.size || (closedSales > 0 ? closedSales : filtered.length);
 
-  // Simple growth estimation based on row sequence
+  // Month-over-month or sequence-based growth calculation
   const half = Math.floor(filtered.length / 2);
-  const firstHalfRev = filtered.slice(0, half).reduce((sum, r) => sum + (Number(r.revenue || r.amount || 0) || 0), 0);
-  const secondHalfRev = filtered.slice(half).reduce((sum, r) => sum + (Number(r.revenue || r.amount || 0) || 0), 0);
-  const revenueGrowth = firstHalfRev > 0 ? Number((((secondHalfRev - firstHalfRev) / firstHalfRev) * 100).toFixed(1)) : 12.5;
+  const firstHalfVal = filtered.slice(0, half).reduce((sum, r) => {
+    const val = Number(r.amount_inr || r.amount || r.deal_value_inr || r.revenue || 0);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
 
-  const conversionRate = filtered.length > 0 ? Number(((closedSales / filtered.length) * 100).toFixed(1)) : 3.8;
+  const secondHalfVal = filtered.slice(half).reduce((sum, r) => {
+    const val = Number(r.amount_inr || r.amount || r.deal_value_inr || r.revenue || 0);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+
+  const revenueGrowth = firstHalfVal > 0 ? Number((((secondHalfVal - firstHalfVal) / firstHalfVal) * 100).toFixed(1)) : 0.0;
+  const conversionRate = filtered.length > 0 ? Number(((closedSales / filtered.length) * 100).toFixed(1)) : 0.0;
 
   return {
     totalRevenue,
     revenueGrowth,
     totalExpenses,
     netProfit,
-    profitGrowth: 10.2,
+    profitGrowth: revenueGrowth,
     activeCustomers: customerCount,
-    customerGrowth: 8.4,
+    customerGrowth: 0.0,
     conversionRate,
-    totalSales: closedSales,
+    totalSales: closedSales || filtered.length,
   };
 }
 
@@ -118,8 +129,9 @@ export function calculateMonthlyTrends(rows: BusinessRow[], filters: AnalyticsFi
 
   filtered.forEach((r) => {
     let month = "Jan";
-    if (r.date) {
-      const d = new Date(r.date);
+    if (r.date || r.created_date) {
+      const dateStr = String(r.date || r.created_date);
+      const d = new Date(dateStr);
       if (!isNaN(d.getTime())) {
         month = monthNames[d.getMonth()];
       }
@@ -129,11 +141,16 @@ export function calculateMonthlyTrends(rows: BusinessRow[], filters: AnalyticsFi
       monthlyMap[month] = { revenue: 0, expenses: 0, profit: 0, sales: 0 };
     }
 
-    const rev = Number(r.revenue || r.amount || r.sales || 0);
-    const exp = Number(r.expense || r.cost || 0);
-    monthlyMap[month].revenue += isNaN(rev) ? 0 : rev;
-    monthlyMap[month].expenses += isNaN(exp) ? 0 : exp;
-    monthlyMap[month].profit += (isNaN(rev) ? 0 : rev) - (isNaN(exp) ? 0 : exp);
+    const isExpenseRow = Boolean(r.expense_id || r.category || r.approved_by || r.expense || r.cost);
+    const amountVal = Number(r.amount_inr || r.amount || r.deal_value_inr || r.revenue || r.expense || 0);
+
+    if (isExpenseRow) {
+      monthlyMap[month].expenses += isNaN(amountVal) ? 0 : amountVal;
+    } else {
+      monthlyMap[month].revenue += isNaN(amountVal) ? 0 : amountVal;
+    }
+
+    monthlyMap[month].profit = monthlyMap[month].revenue - monthlyMap[month].expenses;
     monthlyMap[month].sales += 1;
   });
 
@@ -157,34 +174,29 @@ export function calculateRegionalBreakdown(rows: BusinessRow[], filters: Analyti
   let grandTotalRev = 0;
 
   filtered.forEach((r) => {
-    const region = r.region || "South (Chennai / Blr)";
+    const region = r.region || "General";
     if (!regionMap[region]) {
       regionMap[region] = { revenue: 0, sales: 0 };
     }
-    const rev = Number(r.revenue || r.amount || 0);
-    regionMap[region].revenue += isNaN(rev) ? 0 : rev;
+    const val = Number(r.amount_inr || r.amount || r.deal_value_inr || r.revenue || 0);
+    regionMap[region].revenue += isNaN(val) ? 0 : val;
     regionMap[region].sales += 1;
-    grandTotalRev += isNaN(rev) ? 0 : rev;
+    grandTotalRev += isNaN(val) ? 0 : val;
   });
 
   const regions = Object.keys(regionMap);
   if (regions.length === 0) {
-    return [
-      { region: "South (Chennai / Blr)", sales: 4850, revenue: 10200000, growth: 22.4, share: 41.5 },
-      { region: "West (Mumbai / Pune)", sales: 3420, revenue: 7350000, growth: 16.8, share: 29.9 },
-      { region: "North (Delhi / NCR)", sales: 2680, revenue: 4980000, growth: 12.1, share: 20.3 },
-      { region: "East (Kolkata)", sales: 1500, revenue: 2050000, growth: 8.5, share: 8.3 },
-    ];
+    return [];
   }
 
   return regions.map((reg) => {
     const data = regionMap[reg];
-    const share = grandTotalRev > 0 ? Number(((data.revenue / grandTotalRev) * 100).toFixed(1)) : 25;
+    const share = grandTotalRev > 0 ? Number(((data.revenue / grandTotalRev) * 100).toFixed(1)) : 0;
     return {
       region: reg,
       sales: data.sales,
       revenue: Math.round(data.revenue),
-      growth: 14.2,
+      growth: 0.0,
       share,
     };
   });
@@ -192,27 +204,20 @@ export function calculateRegionalBreakdown(rows: BusinessRow[], filters: Analyti
 
 export function calculateStatisticalForecast(rows: BusinessRow[]) {
   const monthlyData = calculateMonthlyTrends(rows);
-  const activeMonths = monthlyData.filter((m) => m.revenue > 0);
+  const activeMonths = monthlyData.filter((m) => m.revenue > 0 || m.expenses > 0);
 
   if (activeMonths.length === 0) {
-    return [
-      { period: "Sep 2026", actual: 2900000, predicted: 2880000, lowerBound: 2750000, upperBound: 3010000 },
-      { period: "Oct 2026", actual: 3100000, predicted: 3050000, lowerBound: 2900000, upperBound: 3200000 },
-      { period: "Nov 2026", actual: 3350000, predicted: 3300000, lowerBound: 3120000, upperBound: 3480000 },
-      { period: "Dec 2026", actual: null, predicted: 3650000, lowerBound: 3450000, upperBound: 3850000 },
-      { period: "Jan 2027", actual: null, predicted: 3920000, lowerBound: 3680000, upperBound: 4160000 },
-      { period: "Feb 2027", actual: null, predicted: 4210000, lowerBound: 3950000, upperBound: 4470000 },
-    ];
+    return [];
   }
 
-  const avgRev = activeMonths.reduce((sum, m) => sum + m.revenue, 0) / activeMonths.length;
+  const avgRev = activeMonths.reduce((sum, m) => sum + (m.revenue || m.expenses), 0) / activeMonths.length;
 
   return monthlyData.slice(0, 8).map((m, idx) => {
     const isHistorical = idx < activeMonths.length;
     const predicted = Math.round(avgRev * (1 + idx * 0.05));
     return {
       period: `${m.month} 2026`,
-      actual: isHistorical ? m.revenue : null,
+      actual: isHistorical ? (m.revenue || m.expenses) : null,
       predicted,
       lowerBound: Math.round(predicted * 0.9),
       upperBound: Math.round(predicted * 1.1),

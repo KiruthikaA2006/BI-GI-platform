@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getActiveDataset } from "@/lib/dataset-store";
 import {
@@ -18,8 +19,12 @@ export async function GET(req: Request) {
 
     const filter = { region, department, product };
 
-    // 1. Check Active Store dataset (from recent upload)
-    let activeDataset = getActiveDataset();
+    const cookieStore = await cookies();
+    const activeOrgId = cookieStore.get("active_org_id")?.value || "acme-retail";
+    const activeOrgName = cookieStore.get("active_org_name")?.value || "Acme Global Retail";
+
+    // 1. Check Active Store dataset for active organization
+    let activeDataset = getActiveDataset(activeOrgId);
     let rows: BusinessRow[] = [];
     let datasetMeta: any = null;
 
@@ -27,14 +32,16 @@ export async function GET(req: Request) {
       rows = activeDataset.data;
       datasetMeta = {
         id: activeDataset.id,
+        organizationId: activeOrgId,
         name: activeDataset.name,
         rowCount: activeDataset.rowCount,
         updatedAt: activeDataset.updatedAt,
       };
     } else {
-      // 2. Query PostgreSQL Database
+      // 2. Query PostgreSQL Database strictly for active organization
       try {
         const dbDataset = await prisma.dataset.findFirst({
+          where: { organizationId: activeOrgId },
           orderBy: { createdAt: "desc" },
         });
 
@@ -42,6 +49,7 @@ export async function GET(req: Request) {
           rows = dbDataset.data as BusinessRow[];
           datasetMeta = {
             id: dbDataset.id,
+            organizationId: dbDataset.organizationId,
             name: dbDataset.name,
             rowCount: dbDataset.rowCount,
             updatedAt: dbDataset.updatedAt.toISOString().replace("T", " ").substring(0, 19),
@@ -61,6 +69,8 @@ export async function GET(req: Request) {
       return NextResponse.json({
         success: true,
         source: "database",
+        organizationId: activeOrgId,
+        organizationName: activeOrgName,
         datasetInfo: datasetMeta,
         metrics,
         trends,
@@ -70,10 +80,12 @@ export async function GET(req: Request) {
       });
     }
 
-    // No dataset present yet
+    // No dataset present yet for this organization
     return NextResponse.json({
       success: true,
       source: "none",
+      organizationId: activeOrgId,
+      organizationName: activeOrgName,
       datasetInfo: null,
       metrics: null,
       trends: [],

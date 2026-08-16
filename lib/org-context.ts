@@ -14,231 +14,366 @@ export interface OrgMember {
   id: string;
   name: string;
   email: string;
-  role: string; // "ORGANIZATION_ADMIN" | "EXECUTIVE" | "DEPARTMENT_MANAGER" | "ANALYST" | "SUPER_ADMIN"
+  role:
+  | "ORGANIZATION_ADMIN"
+  | "EXECUTIVE"
+  | "DEPARTMENT_MANAGER"
+  | "ANALYST"
+  | "SUPER_ADMIN";
   designation: string;
   department: string;
   status: "active" | "deactivated";
   createdAt: string;
 }
 
-export const INITIAL_ORGANIZATIONS: Organization[] = [
-  {
-    id: "qubertrix",
-    name: "Qubertrix Technologies",
-    slug: "qubertrix",
-    role: "Organization Admin",
-    industry: "Enterprise AI & Software",
-    plan: "Enterprise Tier",
-    membersCount: 4,
-  },
-  {
-    id: "acme-retail",
-    name: "Acme Global Retail",
-    slug: "acme-retail",
-    role: "Organization Admin",
-    industry: "Retail & E-commerce",
-    plan: "Business Tier",
-    membersCount: 3,
-  },
-  {
-    id: "apex-finance",
-    name: "Apex Financial Group",
-    slug: "apex-finance",
-    role: "Executive Viewer",
-    industry: "Fintech & Banking",
-    plan: "Pro Tier",
-    membersCount: 2,
-  },
-  {
-    id: "horizon-health",
-    name: "Horizon Healthcare Systems",
-    slug: "horizon-health",
-    role: "Organization Admin",
-    industry: "Healthcare & Biotech",
-    plan: "Enterprise Tier",
-    membersCount: 3,
-  },
-];
+/**
+ * No hardcoded/mock organizations.
+ *
+ * Organizations must come from the authenticated user's real
+ * organization context and be stored in localStorage after
+ * authentication/API resolution.
+ */
+export const INITIAL_ORGANIZATIONS: Organization[] = [];
 
+/**
+ * Get organizations stored for the current user.
+ */
 export function getStoredOrganizations(): Organization[] {
-  if (typeof window === "undefined") return INITIAL_ORGANIZATIONS;
+  if (typeof window === "undefined") {
+    return [];
+  }
+
   try {
     const raw = localStorage.getItem("user_organizations");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+
+    if (!raw) {
+      return [];
     }
-  } catch (e) {
-    console.error("Failed to parse user_organizations", e);
+
+    const parsed: unknown = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (org): org is Organization =>
+        typeof org === "object" &&
+        org !== null &&
+        typeof (org as Organization).id === "string" &&
+        typeof (org as Organization).name === "string" &&
+        typeof (org as Organization).slug === "string"
+    );
+  } catch (error) {
+    console.error("Failed to parse user_organizations", error);
+    return [];
   }
-  return INITIAL_ORGANIZATIONS;
 }
 
-export function getActiveOrganization(): Organization {
+/**
+ * Get the currently active organization.
+ *
+ * The organization must come from the authenticated session/context.
+ * No default or mock organization is created here.
+ */
+export function getActiveOrganization(): Organization | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
   const allOrgs = getStoredOrganizations();
-  if (typeof window === "undefined") return allOrgs[0];
 
   const storedId = localStorage.getItem("active_org_id");
   const storedName = localStorage.getItem("active_org_name");
+  const storedSlug = localStorage.getItem("active_org_slug");
+  const storedRole = localStorage.getItem("active_role");
+  const storedIndustry = localStorage.getItem("active_org_industry");
 
+  /**
+   * First preference:
+   * Find the real organization in the user's organization list.
+   */
   if (storedId) {
-    const found = allOrgs.find((o) => o.id === storedId);
-    if (found) return found;
+    const found = allOrgs.find((org) => org.id === storedId);
+
+    if (found) {
+      return found;
+    }
   }
 
-  if (storedName) {
-    const found = allOrgs.find((o) => o.name === storedName);
-    if (found) return found;
+  /**
+   * If the organization list has not yet been populated,
+   * reconstruct only from authenticated organization context
+   * already stored by the application.
+   *
+   * No fake organization ID/name is generated.
+   */
+  if (storedId && storedName) {
     return {
-      id: storedName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+      id: storedId,
       name: storedName,
-      slug: storedName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-      role: localStorage.getItem("active_role") || "Organization Admin",
-      industry: localStorage.getItem("active_org_industry") || "Software & SaaS",
-      plan: "Enterprise Tier",
-      membersCount: 1,
+      slug: storedSlug || storedId,
+      ...(storedRole ? { role: storedRole } : {}),
+      ...(storedIndustry ? { industry: storedIndustry } : {}),
     };
   }
 
-  return allOrgs[0];
+  return null;
 }
 
-export function setActiveOrganization(org: Organization) {
-  if (typeof window === "undefined") return;
+/**
+ * Set the active organization.
+ *
+ * This should only be called with an organization obtained from
+ * the authenticated user/API.
+ */
+export function setActiveOrganization(org: Organization): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
   localStorage.setItem("active_org_id", org.id);
   localStorage.setItem("active_org_name", org.name);
   localStorage.setItem("active_org_slug", org.slug || org.id);
-  if (org.industry) localStorage.setItem("active_org_industry", org.industry);
 
-  // Automatically ensure org exists in user_organizations list
+  if (org.role) {
+    localStorage.setItem("active_role", org.role);
+  }
+
+  if (org.industry) {
+    localStorage.setItem("active_org_industry", org.industry);
+  }
+
+  /**
+   * Keep the organization context available to server/API routes.
+   */
+  try {
+    document.cookie = `active_org_id=${encodeURIComponent(
+      org.id
+    )}; path=/; SameSite=Lax`;
+
+    document.cookie = `active_org_name=${encodeURIComponent(
+      org.name
+    )}; path=/; SameSite=Lax`;
+
+    document.cookie = `active_org_slug=${encodeURIComponent(
+      org.slug || org.id
+    )}; path=/; SameSite=Lax`;
+  } catch (error) {
+    console.error("Failed to store organization cookies", error);
+  }
+
+  /**
+   * Store only the real organization received from the API/session.
+   * No mock organization is added.
+   */
   addOrganization(org);
 }
 
-export function addOrganization(newOrg: Organization): Organization[] {
-  if (typeof window === "undefined") return [newOrg];
+/**
+ * Add or update a real organization in the user's local organization list.
+ */
+export function addOrganization(
+  newOrg: Organization
+): Organization[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
 
   const allOrgs = getStoredOrganizations();
-  const existingIdx = allOrgs.findIndex((o) => o.id === newOrg.id || o.name.toLowerCase() === newOrg.name.toLowerCase());
 
-  if (existingIdx >= 0) {
-    allOrgs[existingIdx] = { ...allOrgs[existingIdx], ...newOrg };
+  const existingIndex = allOrgs.findIndex(
+    (org) =>
+      org.id === newOrg.id ||
+      org.name.toLowerCase() === newOrg.name.toLowerCase()
+  );
+
+  if (existingIndex >= 0) {
+    allOrgs[existingIndex] = {
+      ...allOrgs[existingIndex],
+      ...newOrg,
+    };
   } else {
     allOrgs.push(newOrg);
   }
 
-  localStorage.setItem("user_organizations", JSON.stringify(allOrgs));
+  localStorage.setItem(
+    "user_organizations",
+    JSON.stringify(allOrgs)
+  );
 
-  // Initialize creator member if no members exist for this org
-  const existingMembers = getOrgMembers(newOrg.id);
-  if (existingMembers.length === 0) {
-    const creatorMember: OrgMember = {
-      id: "mem_" + Date.now(),
-      name: `${newOrg.name} Lead Admin`,
-      email: `admin@${newOrg.slug}.com`,
-      role: newOrg.role || "ORGANIZATION_ADMIN",
-      designation: "Organization Owner & Admin",
-      department: "Executive & Admin",
-      status: "active",
-      createdAt: new Date().toISOString().split("T")[0],
-    };
-    localStorage.setItem(`org_members_${newOrg.id}`, JSON.stringify([creatorMember]));
-  }
+  /**
+   * IMPORTANT:
+   * Do not automatically create a fake organization member.
+   * Members must come from the real backend/database.
+   */
 
   return allOrgs;
 }
 
+/**
+ * Get members belonging to a real organization.
+ *
+ * This function reads only members previously supplied by the
+ * backend/API. It does not generate demo members.
+ */
 export function getOrgMembers(orgId: string): OrgMember[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  if (!orgId) {
+    return [];
+  }
 
   try {
     const raw = localStorage.getItem(`org_members_${orgId}`);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+
+    if (!raw) {
+      return [];
     }
-  } catch (e) {
-    console.error("Failed to parse org members", e);
+
+    const parsed: unknown = JSON.parse(raw);
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.filter(
+      (member): member is OrgMember =>
+        typeof member === "object" &&
+        member !== null &&
+        typeof (member as OrgMember).id === "string" &&
+        typeof (member as OrgMember).name === "string" &&
+        typeof (member as OrgMember).email === "string" &&
+        typeof (member as OrgMember).role === "string"
+    );
+  } catch (error) {
+    console.error(
+      `Failed to parse org members for organization ${orgId}`,
+      error
+    );
+
+    return [];
   }
-
-  // Default initial members for built-in organizations
-  const activeOrg = getStoredOrganizations().find((o) => o.id === orgId);
-  const orgName = activeOrg ? activeOrg.name : "Organization";
-  const domain = activeOrg ? activeOrg.slug + ".com" : "company.com";
-
-  const defaultMembers: OrgMember[] = [
-    {
-      id: `mem_${orgId}_1`,
-      name: `${orgName} Lead Admin`,
-      email: `admin@${domain}`,
-      role: "ORGANIZATION_ADMIN",
-      designation: "Head of Organization & Governance",
-      department: "Executive Management",
-      status: "active",
-      createdAt: "2026-01-15",
-    },
-    {
-      id: `mem_${orgId}_2`,
-      name: `Chief Executive Officer`,
-      email: `ceo@${domain}`,
-      role: "EXECUTIVE",
-      designation: "Chief Executive Officer",
-      department: "Executive Strategy",
-      status: "active",
-      createdAt: "2026-02-01",
-    },
-    {
-      id: `mem_${orgId}_3`,
-      name: `Department Manager`,
-      email: `manager@${domain}`,
-      role: "DEPARTMENT_MANAGER",
-      designation: "Operations Manager",
-      department: "Sales & Operations",
-      status: "active",
-      createdAt: "2026-02-10",
-    },
-    {
-      id: `mem_${orgId}_4`,
-      name: `Senior Data Analyst`,
-      email: `analyst@${domain}`,
-      role: "ANALYST",
-      designation: "Senior BI & Data Analyst",
-      department: "Data & Analytics",
-      status: "active",
-      createdAt: "2026-03-01",
-    },
-  ];
-
-  localStorage.setItem(`org_members_${orgId}`, JSON.stringify(defaultMembers));
-  return defaultMembers;
 }
 
-export function registerOrgMember(orgId: string, memberData: Omit<OrgMember, "id" | "createdAt">): OrgMember[] {
-  if (typeof window === "undefined") return [];
+/**
+ * Store members returned by the backend/API.
+ *
+ * Use this after fetching real organization members.
+ */
+export function setOrgMembers(
+  orgId: string,
+  members: OrgMember[]
+): void {
+  if (typeof window === "undefined" || !orgId) {
+    return;
+  }
+
+  localStorage.setItem(
+    `org_members_${orgId}`,
+    JSON.stringify(members)
+  );
+
+  /**
+   * Keep the local organization member count synchronized.
+   */
+  const allOrgs = getStoredOrganizations();
+
+  const orgIndex = allOrgs.findIndex(
+    (org) => org.id === orgId
+  );
+
+  if (orgIndex >= 0) {
+    allOrgs[orgIndex] = {
+      ...allOrgs[orgIndex],
+      membersCount: members.length,
+    };
+
+    localStorage.setItem(
+      "user_organizations",
+      JSON.stringify(allOrgs)
+    );
+  }
+}
+
+/**
+ * Register a real organization member.
+ *
+ * This function only stores the member data supplied by the
+ * authenticated/admin flow. It does not create fake members.
+ */
+export function registerOrgMember(
+  orgId: string,
+  memberData: Omit<OrgMember, "id" | "createdAt">
+): OrgMember[] {
+  if (typeof window === "undefined" || !orgId) {
+    return [];
+  }
 
   const currentMembers = getOrgMembers(orgId);
-  const newMember: OrgMember = {
+
+  const existingIndex = currentMembers.findIndex(
+    (member) =>
+      member.email.toLowerCase() ===
+      memberData.email.toLowerCase()
+  );
+
+  const member: OrgMember = {
     ...memberData,
-    id: "mem_" + Date.now(),
-    createdAt: new Date().toISOString().split("T")[0],
+    id:
+      existingIndex >= 0
+        ? currentMembers[existingIndex].id
+        : `mem_${Date.now()}`,
+    createdAt:
+      existingIndex >= 0
+        ? currentMembers[existingIndex].createdAt
+        : new Date().toISOString().split("T")[0],
   };
 
-  // Replace member if email already exists or add new
-  const existingIdx = currentMembers.findIndex((m) => m.email.toLowerCase() === memberData.email.toLowerCase());
-  if (existingIdx >= 0) {
-    currentMembers[existingIdx] = newMember;
+  if (existingIndex >= 0) {
+    currentMembers[existingIndex] = member;
   } else {
-    currentMembers.push(newMember);
+    currentMembers.push(member);
   }
 
-  localStorage.setItem(`org_members_${orgId}`, JSON.stringify(currentMembers));
-
-  // Update org membersCount in stored organizations
-  const allOrgs = getStoredOrganizations();
-  const orgIdx = allOrgs.findIndex((o) => o.id === orgId);
-  if (orgIdx >= 0) {
-    allOrgs[orgIdx].membersCount = currentMembers.length;
-    localStorage.setItem("user_organizations", JSON.stringify(allOrgs));
-  }
+  setOrgMembers(orgId, currentMembers);
 
   return currentMembers;
+}
+
+/**
+ * Clear organization context on logout.
+ *
+ * This removes only the current user's locally stored organization
+ * context. It does not create or replace it with a default org.
+ */
+export function clearOrganizationContext(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  localStorage.removeItem("active_org_id");
+  localStorage.removeItem("active_org_name");
+  localStorage.removeItem("active_org_slug");
+  localStorage.removeItem("active_role");
+  localStorage.removeItem("active_org_industry");
+  localStorage.removeItem("user_organizations");
+
+  try {
+    document.cookie =
+      "active_org_id=; path=/; max-age=0";
+
+    document.cookie =
+      "active_org_name=; path=/; max-age=0";
+
+    document.cookie =
+      "active_org_slug=; path=/; max-age=0";
+  } catch (error) {
+    console.error(
+      "Failed to clear organization cookies",
+      error
+    );
+  }
 }

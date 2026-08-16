@@ -20,7 +20,12 @@ export default function OrganizationCheckPage() {
   useEffect(() => {
     const list = getStoredOrganizations();
     setWorkspaces(list);
-    if (list.length > 0) setSelectedOrgId(list[0].id);
+    if (list.length > 0) {
+      setSelectedOrgId(list[0].id);
+      setOrgState("has_org");
+    } else {
+      setOrgState("no_org");
+    }
   }, []);
 
   const handleSelectWorkspace = (org: Organization) => {
@@ -28,13 +33,13 @@ export default function OrganizationCheckPage() {
     router.push("/login");
   };
 
-  const handleCreateOrgSubmit = (e: React.FormEvent) => {
+  const handleCreateOrgSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newOrgName.trim()) return;
 
     const slug = newOrgName.toLowerCase().replace(/[^a-z0-9]/g, "-") || "new-org";
     const newOrg: Organization = {
-      id: slug + "-" + Date.now().toString().slice(-4),
+      id: slug,
       name: newOrgName,
       slug: slug,
       role: "Organization Admin",
@@ -44,6 +49,17 @@ export default function OrganizationCheckPage() {
     };
 
     setActiveOrganization(newOrg);
+
+    try {
+      await fetch("/api/organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newOrgName, slug }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist organization in PostgreSQL:", err);
+    }
+
     router.push("/login");
   };
 
@@ -73,7 +89,7 @@ export default function OrganizationCheckPage() {
               }`}
             >
               <Building2 className="h-4 w-4" />
-              <span>Select Existing Organization</span>
+              <span>Select Existing Organization ({workspaces.length})</span>
             </button>
             <button
               type="button"
@@ -101,39 +117,51 @@ export default function OrganizationCheckPage() {
                 </span>
               </div>
 
-              <div className="space-y-3">
-                {workspaces.map((ws) => (
-                  <div
-                    key={ws.id}
-                    onClick={() => handleSelectWorkspace(ws)}
-                    className="p-4 rounded-2xl bg-stone-50 border border-stone-200 hover:border-emerald-500 transition cursor-pointer flex items-center justify-between group shadow-sm"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-stone-900 text-base group-hover:text-emerald-700 transition">
-                          {ws.name}
-                        </span>
-                        <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-stone-200 text-stone-800 border border-stone-300">
-                          {ws.role || "Organization Member"}
-                        </span>
+              {workspaces.length > 0 ? (
+                <div className="space-y-3">
+                  {workspaces.map((ws) => (
+                    <div
+                      key={ws.id}
+                      onClick={() => handleSelectWorkspace(ws)}
+                      className="p-4 rounded-2xl bg-stone-50 border border-stone-200 hover:border-emerald-500 transition cursor-pointer flex items-center justify-between group shadow-sm"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-stone-900 text-base group-hover:text-emerald-700 transition">
+                            {ws.name}
+                          </span>
+                          <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-stone-200 text-stone-800 border border-stone-300">
+                            {ws.role || "Organization Member"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-600 flex items-center gap-3 font-medium">
+                          <span>{ws.industry || "Enterprise Workspace"}</span>
+                          <span>•</span>
+                          <span>{ws.plan || "Enterprise Tier"}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-stone-600">
+                            <Users className="h-3 w-3" /> {ws.membersCount || 1} team members
+                          </span>
+                        </p>
                       </div>
-                      <p className="text-xs text-stone-600 flex items-center gap-3 font-medium">
-                        <span>{ws.industry || "Enterprise Workspace"}</span>
-                        <span>•</span>
-                        <span>{ws.plan || "Enterprise Tier"}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1 text-stone-600">
-                          <Users className="h-3 w-3" /> {ws.membersCount || 10} team members
-                        </span>
-                      </p>
-                    </div>
 
-                    <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
-                      <span>Select & Proceed to Login →</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+                        <span>Select Workspace →</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 bg-stone-50 border border-stone-200 rounded-2xl text-center space-y-3">
+                  <p className="text-xs text-stone-600 font-bold">No workspaces created yet.</p>
+                  <button
+                    onClick={() => setOrgState("no_org")}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow"
+                  >
+                    Create Your First Organization →
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -152,7 +180,7 @@ export default function OrganizationCheckPage() {
                   type="text"
                   value={newOrgName}
                   onChange={(e) => setNewOrgName(e.target.value)}
-                  placeholder="e.g. Acme Corporation, TechCorp, Global Logistics..."
+                  placeholder="e.g. Acme Corporation, TechCorp, Qubertrix..."
                   required
                   className="block w-full px-3 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-sm text-stone-900 font-bold focus:outline-none focus:border-indigo-600"
                 />

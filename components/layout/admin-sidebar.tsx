@@ -59,7 +59,10 @@ export function AdminSidebar() {
           <nav className="space-y-1">
             {adminNav.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
+              const hasExactMatch = adminNav.some((nav) => nav.href === pathname);
+              const isActive = hasExactMatch
+                ? item.href === pathname
+                : item.href !== "/" && (pathname === item.href || pathname.startsWith(item.href + "/"));
               return (
                 <Link
                   key={item.href}

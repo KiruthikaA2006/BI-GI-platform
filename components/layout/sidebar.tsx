@@ -27,6 +27,7 @@ import {
   Building,
   ShieldCheck,
   CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 
 interface NavItem {
@@ -124,12 +125,12 @@ export function Sidebar({ currentRole }: SidebarProps) {
     if (normalizedRole === "ANALYST") {
       return [
         { title: "Analyst Dashboard", href: "/analyst/dashboard", icon: LayoutDashboard },
-        { title: "Data Ingestion", href: "/analyst/ingestion", icon: UploadCloud },
-        { title: "Data Center Pipeline", href: "/analyst/data-center", icon: Database },
         { title: "Datasets", href: "/analyst/datasets", icon: TableProperties },
-        { title: "Data Explorer", href: "/analyst/explorer", icon: Search },
+        { title: "Data Preparation", href: "/analyst/preparation", icon: RefreshCw },
+        { title: "Analysis", href: "/analyst/analysis", icon: Search },
+        { title: "Visualizations", href: "/analyst/visualizations", icon: TrendingUp },
         { title: "AI Insights", href: "/analyst/ai-insights", icon: Sparkles, badge: "AI" },
-        { title: "Custom Reports", href: "/analyst/reports", icon: FileText },
+        { title: "Reports", href: "/analyst/reports", icon: FileText },
         { title: "My Profile", href: "/analyst/profile", icon: User },
       ];
     }
@@ -144,7 +145,7 @@ export function Sidebar({ currentRole }: SidebarProps) {
       { title: "AI Recommendations", href: "/ai-insights/recommendations", icon: Zap, section: "Execution Loop" },
       { title: "Goals & Actions", href: "/goals", icon: Target, section: "Execution Loop" },
       { title: "Workspace & Members", href: "/workspace", icon: Building2, section: "Workspace" },
-      { title: "User Management", href: "/workspace", icon: Users, section: "Workspace" },
+      { title: "User Management", href: "/users", icon: Users, section: "Workspace" },
       { title: "Audit Logs", href: "/audit-logs", icon: History, section: "Workspace" },
     ];
   };
@@ -169,7 +170,7 @@ export function Sidebar({ currentRole }: SidebarProps) {
 
         {/* Active Role Indicator Badge */}
         <div className="bg-neutral-900 p-2 rounded-xl border border-neutral-800 flex items-center justify-between">
-          <span className="text-[10px] text-neutral-400 font-bold uppercase">Role Scope:</span>
+          <span className="text-[10px] text-neutral-400 font-bold uppercase">Role:</span>
           <span
             className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${normalizedRole === "SUPER_ADMIN"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
@@ -196,7 +197,10 @@ export function Sidebar({ currentRole }: SidebarProps) {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+              const hasExactMatch = navItems.some((nav) => nav.href === pathname);
+              const isActive = hasExactMatch
+                ? item.href === pathname
+                : item.href !== "/" && (pathname === item.href || pathname.startsWith(item.href + "/"));
               return (
                 <Link
                   key={item.href}

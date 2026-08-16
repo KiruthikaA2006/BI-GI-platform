@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -18,9 +18,57 @@ import {
   ArrowUpRight,
   CheckCircle2,
   ShieldCheck,
+  Building2,
+  AlertCircle,
 } from "lucide-react";
+import { getActiveOrganization } from "@/lib/org-context";
 
 export default function DashboardPage() {
+  const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const active = getActiveOrganization();
+    if (active && active.name) {
+      setCurrentOrgName(active.name);
+    }
+
+    fetch("/api/dashboard/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStats(data);
+          if (data.organizationName) setCurrentOrgName(data.organizationName);
+        }
+      })
+      .catch((err) => console.error("Error fetching dashboard stats:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const metrics = stats?.metrics;
+  const hasRealData = stats?.source === "database" && metrics && stats?.rawRowsCount > 0;
+
+  const formattedMRR = hasRealData && metrics.totalRevenue
+    ? `$${(metrics.totalRevenue / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+    : "$0";
+
+  const formattedRevenueGrowth = hasRealData && metrics.revenueGrowth != null
+    ? `${metrics.revenueGrowth >= 0 ? "+" : ""}${metrics.revenueGrowth.toFixed(1)}%`
+    : "0.0%";
+
+  const formattedChurn = hasRealData && metrics.churnRate != null
+    ? `${metrics.churnRate.toFixed(2)}%`
+    : "0.00%";
+
+  const formattedAlerts = hasRealData && metrics.activeAlertsCount != null
+    ? `${metrics.activeAlertsCount} Active`
+    : "0 Active";
+
+  const formattedGoalsRate = hasRealData && metrics.goalCompletionRate != null
+    ? `${metrics.goalCompletionRate.toFixed(1)}%`
+    : "0.0%";
+
   return (
     <div className="flex h-screen bg-[#e4dac9] text-stone-900 overflow-hidden selection:bg-indigo-500">
       <Sidebar />
@@ -34,39 +82,62 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold uppercase tracking-wider">
                   <Activity className="h-3.5 w-3.5" />
-                  <span>Business Health Scorecard • Active</span>
+                  <span>Business Health Scorecard • {currentOrgName}</span>
                 </div>
                 <h1 className="text-3xl font-black text-stone-900 tracking-tight">
                   Enterprise Growth Cockpit
                 </h1>
                 <p className="text-xs text-stone-600 max-w-xl">
-                  Real-time telemetry aggregating Data Pipeline metrics, KPI Engine outputs, AI Anomaly Diagnosis, and Goal Velocity.
+                  Real-time telemetry aggregating Data Pipeline metrics, KPI Engine outputs, AI Anomaly Diagnosis, and Goal Velocity for <strong>{currentOrgName}</strong>.
                 </p>
               </div>
 
               <div className="bg-stone-50 border border-stone-200 p-4 rounded-2xl flex items-center gap-6 min-w-[280px]">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase text-stone-500 block">Overall Business Health</span>
-                  <span className="text-3xl font-black text-emerald-700">94.8<span className="text-xs text-stone-500">/100</span></span>
+                  <span className="text-3xl font-black text-emerald-700">
+                    {hasRealData && metrics.healthScore ? metrics.healthScore.toFixed(1) : "0.0"}
+                    <span className="text-xs text-stone-500">/100</span>
+                  </span>
                 </div>
                 <div className="h-10 w-px bg-stone-300" />
                 <div>
                   <span className="text-[10px] font-extrabold uppercase text-stone-500 block">Growth Index</span>
                   <span className="text-sm font-bold text-indigo-700 flex items-center gap-1">
-                    <ArrowUpRight className="h-4 w-4" /> +14.2% YoY
+                    <ArrowUpRight className="h-4 w-4" /> {hasRealData && metrics.growthIndex ? metrics.growthIndex : "0.0% YoY"}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
+          {!hasRealData && (
+            <div className="bg-amber-50 border border-amber-300 p-5 rounded-2xl flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-amber-700 flex-shrink-0" />
+                <div>
+                  <h4 className="text-sm font-black text-stone-900">No Business Dataset Imported Yet</h4>
+                  <p className="text-xs text-stone-600">
+                    Upload your company's real CSV dataset in <strong>Data Center</strong> to calculate live revenue, churn rate, anomaly alerts, and growth index for <strong>{currentOrgName}</strong>.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/data-center"
+                className="bg-amber-700 hover:bg-amber-800 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow flex-shrink-0"
+              >
+                Import Dataset Now →
+              </Link>
+            </div>
+          )}
+
           {/* Quick Metrics Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
               <span className="text-[10px] font-bold uppercase text-stone-500">Monthly Recurring Revenue</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-black text-stone-900">$248,500</span>
-                <span className="text-xs font-bold text-emerald-700">+8.4%</span>
+                <span className="text-2xl font-black text-stone-900">{formattedMRR}</span>
+                <span className="text-xs font-bold text-emerald-700">{formattedRevenueGrowth}</span>
               </div>
               <p className="text-[11px] text-stone-500">Calculated via Data Center KPI Engine</p>
             </div>
@@ -74,17 +145,17 @@ export default function DashboardPage() {
             <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
               <span className="text-[10px] font-bold uppercase text-stone-500">Customer Churn Rate</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-black text-stone-900">1.82%</span>
-                <span className="text-xs font-bold text-emerald-700">-0.4%</span>
+                <span className="text-2xl font-black text-stone-900">{formattedChurn}</span>
+                <span className="text-xs font-bold text-emerald-700">0.0%</span>
               </div>
-              <p className="text-[11px] text-stone-500">Forecast model predicts 1.5% next month</p>
+              <p className="text-[11px] text-stone-500">Forecast model requires dataset</p>
             </div>
 
             <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
               <span className="text-[10px] font-bold uppercase text-stone-500">AI Anomaly Alerts</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-black text-amber-600">2 Active</span>
-                <span className="text-xs font-bold text-amber-700">Low Risk</span>
+                <span className="text-2xl font-black text-amber-600">{formattedAlerts}</span>
+                <span className="text-xs font-bold text-amber-700">{hasRealData ? "Live" : "Ready"}</span>
               </div>
               <p className="text-[11px] text-stone-500">Root Cause Analysis in AI Insights</p>
             </div>
@@ -92,10 +163,10 @@ export default function DashboardPage() {
             <div className="bg-white border border-stone-300 p-5 rounded-2xl space-y-2 shadow-sm">
               <span className="text-[10px] font-bold uppercase text-stone-500">Goal Completion Rate</span>
               <div className="flex items-baseline justify-between">
-                <span className="text-2xl font-black text-indigo-700">88.5%</span>
-                <span className="text-xs font-bold text-indigo-700">On Track</span>
+                <span className="text-2xl font-black text-indigo-700">{formattedGoalsRate}</span>
+                <span className="text-xs font-bold text-indigo-700">{hasRealData ? "Tracked" : "Ready"}</span>
               </div>
-              <p className="text-[11px] text-stone-500">Outcome tracking active on 12 goals</p>
+              <p className="text-[11px] text-stone-500">Outcome tracking active on goals</p>
             </div>
           </div>
 

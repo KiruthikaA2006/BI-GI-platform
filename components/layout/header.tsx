@@ -35,7 +35,7 @@ export function Header({
 
   useEffect(() => {
     const org = getActiveOrganization();
-    setSelectedOrg(org.name);
+    if (org && org.name) setSelectedOrg(org.name);
     const storedEmail = localStorage.getItem("user_email");
     if (storedEmail) setUserEmail(storedEmail);
   }, []);

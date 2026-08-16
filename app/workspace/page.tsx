@@ -19,9 +19,11 @@ export default function WorkspaceManagementPage() {
 
   useEffect(() => {
     const org = getActiveOrganization();
-    setActiveOrg(org);
-    const orgMembers = getOrgMembers(org.id);
-    setMembers(orgMembers);
+    if (org) {
+      setActiveOrg(org);
+      const orgMembers = getOrgMembers(org.id);
+      setMembers(orgMembers);
+    }
   }, []);
 
   return (
@@ -109,7 +111,7 @@ export default function WorkspaceManagementPage() {
                       <td className="p-3">
                         <span
                           className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase ${
-                            m.role === "ORGANIZATION_ADMIN" || m.role === "OWNER"
+                            (m.role as string) === "ORGANIZATION_ADMIN" || (m.role as string) === "OWNER"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : m.role === "EXECUTIVE"
                               ? "bg-indigo-50 text-indigo-700 border border-indigo-200"

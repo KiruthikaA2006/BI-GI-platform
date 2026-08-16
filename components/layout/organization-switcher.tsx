@@ -22,7 +22,9 @@ export function OrganizationSwitcher() {
     const list = getStoredOrganizations();
     const current = getActiveOrganization();
     setOrganizations(list);
-    setActiveOrg(current);
+    if (current) {
+      setActiveOrg(current);
+    }
   }, []);
 
   const handleSwitchWorkspace = (org: Organization) => {

@@ -121,13 +121,6 @@ export default function LandingPage() {
                   6-stage automated pipeline: Data Sources ➔ Data Collection ➔ Data Processing ➔ Data Validation ➔ KPI Calculation ➔ KPI Engine.
                 </p>
               </div>
-              <Link
-                href="/data-center"
-                className="inline-flex items-center gap-2 text-xs font-bold text-cyan-700 hover:underline"
-              >
-                <span>View Data Center Pipeline</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
             </div>
 
             {/* Pillar 2 */}
@@ -142,13 +135,6 @@ export default function LandingPage() {
                   Real-time KPI Views, interactive scorecard matrices, executive dashboards, and automated scheduled reporting.
                 </p>
               </div>
-              <Link
-                href="/dashboards"
-                className="inline-flex items-center gap-2 text-xs font-bold text-blue-700 hover:underline"
-              >
-                <span>Explore Dashboards & Reports</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
             </div>
 
             {/* Pillar 3 */}
@@ -163,13 +149,6 @@ export default function LandingPage() {
                   Answers "What happened? Why?" with Trend & Anomaly Detection + AI Root Cause Analysis to explain underlying drivers.
                 </p>
               </div>
-              <Link
-                href="/ai-insights"
-                className="inline-flex items-center gap-2 text-xs font-bold text-purple-700 hover:underline"
-              >
-                <span>Run AI Root Cause Analysis</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
             </div>
           </div>
         </div>
