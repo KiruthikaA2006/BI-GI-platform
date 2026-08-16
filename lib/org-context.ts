@@ -415,14 +415,12 @@ export function clearOrganizationContext(): void {
   // user_organizations is preserved so created organizations remain in existing list
 
   try {
-    document.cookie =
-      "active_org_id=; path=/; max-age=0";
-
-    document.cookie =
-      "active_org_name=; path=/; max-age=0";
-
-    document.cookie =
-      "active_org_slug=; path=/; max-age=0";
+    document.cookie = "active_org_id=; path=/; max-age=0";
+    document.cookie = "active_org_name=; path=/; max-age=0";
+    document.cookie = "active_org_slug=; path=/; max-age=0";
+    document.cookie = "admin_session=; path=/; max-age=0";
+    document.cookie = "org_session=; path=/; max-age=0";
+    document.cookie = "user_role=; path=/; max-age=0";
   } catch (error) {
     console.error(
       "Failed to clear organization cookies",

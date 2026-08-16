@@ -42,8 +42,11 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const res = await fetch(`/api/dashboard/stats?orgId=${encodeURIComponent(orgId)}`);
+      if (!res.ok) {
+        return;
+      }
       const data = await res.json();
-      if (data.success) {
+      if (data && data.success) {
         setStats(data);
         setCachedStats(orgId, data);
         if (data.organizationName) setCurrentOrgName(data.organizationName);

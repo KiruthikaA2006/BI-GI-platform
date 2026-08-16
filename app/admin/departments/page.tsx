@@ -113,14 +113,14 @@ export default function AdminDepartmentsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => openEdit(dept)}
-                      className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 hover:text-white transition"
+                      className="p-2 rounded-xl bg-stone-100 border border-stone-300 text-stone-700 hover:text-stone-900 transition"
                       title="Edit Department"
                     >
                       <Edit className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => handleDelete(dept.id)}
-                      className="p-2 rounded-xl bg-rose-950/40 border border-rose-800/40 text-rose-400 hover:bg-rose-900/60 transition"
+                      className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 transition"
                       title="Delete Department"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -128,9 +128,9 @@ export default function AdminDepartmentsPage() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                  <span>Lead: <strong className="text-slate-200">{dept.lead}</strong></span>
-                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5 text-blue-400" /> {dept.membersCount} members</span>
+                <div className="pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-stone-600">
+                  <span>Lead: <strong className="text-stone-900">{dept.lead}</strong></span>
+                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5 text-blue-600" /> {dept.membersCount} members</span>
                 </div>
               </div>
             ))}
@@ -140,13 +140,13 @@ export default function AdminDepartmentsPage() {
 
       {/* CREATE / EDIT MODAL */}
       {(showModal || editingDept) && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={editingDept ? handleUpdate : handleCreate}
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl"
+            className="bg-white border border-stone-300 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-stone-900"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <h3 className="text-base font-bold text-stone-900">
                 {editingDept ? "Edit Department" : "Create New Department"}
               </h3>
               <button
@@ -155,7 +155,7 @@ export default function AdminDepartmentsPage() {
                   setShowModal(false);
                   setEditingDept(null);
                 }}
-                className="text-slate-400 text-xs"
+                className="text-stone-400 hover:text-stone-700 text-xs font-bold"
               >
                 ✕
               </button>
@@ -163,54 +163,54 @@ export default function AdminDepartmentsPage() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Department Name</label>
+                <label className="block text-stone-700 font-bold mb-1">Department Name</label>
                 <input
                   type="text"
                   required
                   value={deptName}
                   onChange={(e) => setDeptName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Department Code</label>
+                <label className="block text-stone-700 font-bold mb-1">Department Code</label>
                 <input
                   type="text"
                   required
                   value={deptCode}
                   onChange={(e) => setDeptCode(e.target.value)}
                   placeholder="e.g. SLS-02"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Department Lead</label>
+                <label className="block text-stone-700 font-bold mb-1">Department Lead</label>
                 <input
                   type="text"
                   value={deptLead}
                   onChange={(e) => setDeptLead(e.target.value)}
                   placeholder="e.g. Sarah Jenkins"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-medium"
                 />
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end gap-2">
+            <div className="pt-4 border-t border-stone-200 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setShowModal(false);
                   setEditingDept(null);
                 }}
-                className="bg-slate-800 px-4 py-2 rounded-xl text-xs font-semibold text-slate-300"
+                className="bg-stone-100 hover:bg-stone-200 border border-stone-300 px-4 py-2 rounded-xl text-xs font-bold text-stone-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow transition"
               >
                 {editingDept ? "Update Department" : "Create Department"}
               </button>

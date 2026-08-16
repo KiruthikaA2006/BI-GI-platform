@@ -103,7 +103,6 @@ export async function POST(req: Request) {
       });
 
       if (!dbUser && (action === "signup" || action === "login" || action === "register")) {
-        // Formulate readable display name
         const emailPrefix = email.split("@")[0].replace(/[^a-zA-Z]/g, " ").trim();
         const formattedPrefix = emailPrefix ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) : "Employee";
         const fullName = bodyName || formattedPrefix;
@@ -120,7 +119,6 @@ export async function POST(req: Request) {
           },
         });
 
-        // Also create OrganizationMember record if targetOrgId exists
         if (targetOrgId) {
           await prisma.organizationMember.upsert({
             where: {
@@ -170,8 +168,10 @@ export async function POST(req: Request) {
 
     if (chosenRole === Role.SUPER_ADMIN) {
       cookieStore.set("admin_session", JSON.stringify(userSession), { path: "/" });
+      cookieStore.delete("org_session");
     } else {
       cookieStore.set("org_session", JSON.stringify(userSession), { path: "/" });
+      cookieStore.delete("admin_session");
     }
 
     let redirectUrl = "/dashboard";
@@ -197,14 +197,18 @@ export async function POST(req: Request) {
 
 export async function GET() {
   const cookieStore = await cookies();
+  const userRole = cookieStore.get("user_role")?.value;
   const orgCookie = cookieStore.get("org_session")?.value;
   const adminCookie = cookieStore.get("admin_session")?.value;
 
-  if (adminCookie) {
+  if (userRole === "SUPER_ADMIN" && adminCookie) {
     return NextResponse.json({ authenticated: true, user: JSON.parse(adminCookie) });
   }
   if (orgCookie) {
     return NextResponse.json({ authenticated: true, user: JSON.parse(orgCookie) });
+  }
+  if (adminCookie) {
+    return NextResponse.json({ authenticated: true, user: JSON.parse(adminCookie) });
   }
 
   return NextResponse.json({ authenticated: false, user: null });

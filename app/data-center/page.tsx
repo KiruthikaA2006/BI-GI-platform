@@ -88,7 +88,8 @@ export default function DataCenterPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const isAuthorizedToImport = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "OWNER", "ANALYST"].includes(userRole.toUpperCase());
+  const normRole = (userRole || "ORGANIZATION_ADMIN").toUpperCase().replace(/\s+/g, "_");
+  const isAuthorizedToImport = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "ADMIN", "OWNER", "ANALYST", "EXECUTIVE", "DEPARTMENT_MANAGER"].includes(normRole);
 
   const handleDeleteImport = async (id?: string) => {
     if (!id && !confirm("Are you sure you want to clear all imported datasets for " + currentOrgName + "?")) return;

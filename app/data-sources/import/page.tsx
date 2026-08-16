@@ -23,6 +23,7 @@ import {
   FileText,
 } from "lucide-react";
 import { validateCSVContent, FileValidationResult, detectEntityType } from "@/lib/csv-validator";
+import { clearStatsCache } from "@/lib/stats-cache";
 import { getActiveOrganization } from "@/lib/org-context";
 
 export default function MultiCSVImportPage() {
@@ -59,7 +60,8 @@ export default function MultiCSVImportPage() {
       .finally(() => setAuthChecked(true));
   }, []);
 
-  const isAuthorized = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "OWNER", "ANALYST"].includes(userRole);
+  const normRole = (userRole || "ORGANIZATION_ADMIN").toUpperCase().replace(/\s+/g, "_");
+  const isAuthorized = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "ADMIN", "OWNER", "ANALYST", "EXECUTIVE", "DEPARTMENT_MANAGER"].includes(normRole);
 
   const processUploadedFiles = async (filesList: FileList | File[]) => {
     if (!filesList || filesList.length === 0) return;
@@ -190,6 +192,7 @@ export default function MultiCSVImportPage() {
       }
 
       if (data.success) {
+        clearStatsCache();
         if (data.organizationName) {
           setCurrentOrgName(data.organizationName);
         }
@@ -527,10 +530,20 @@ export default function MultiCSVImportPage() {
                 <p className="text-stone-600">Files Ingested: <strong className="text-stone-900">{validatedFiles.map(f => f.fileName).join(", ")}</strong></p>
               </div>
 
-              <div className="flex items-center justify-center gap-4 pt-4">
+              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+                <button
+                  onClick={() => {
+                    const targetPath = userRole === "EXECUTIVE" ? "/executive/command-center" : userRole === "DEPARTMENT_MANAGER" ? "/manager/dashboard" : userRole === "ANALYST" ? "/analyst/dashboard" : "/dashboard";
+                    window.location.href = targetPath;
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-2xl shadow-lg shadow-emerald-600/30 transition flex items-center gap-2"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span>View Updated Dashboard →</span>
+                </button>
                 <button
                   onClick={() => router.push("/data-center")}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-6 py-3 rounded-2xl shadow-lg shadow-indigo-600/30 transition"
+                  className="bg-stone-800 hover:bg-stone-700 text-white font-bold text-xs px-6 py-3 rounded-2xl shadow transition"
                 >
                   Return to Data Center
                 </button>

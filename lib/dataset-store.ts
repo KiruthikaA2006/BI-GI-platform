@@ -23,8 +23,11 @@ if (!globalForDatasetStore.allDatasets) {
 
 export function saveActiveDataset(dataset: StoredDataset) {
   globalForDatasetStore.activeDataset = dataset;
-  // Replace if existing dataset with same ID or add to front
-  const idx = globalForDatasetStore.allDatasets.findIndex((d) => d.id === dataset.id);
+  
+  // Overwrite existing dataset for the same tenant or same dataset ID
+  const idx = globalForDatasetStore.allDatasets.findIndex(
+    (d) => d.id === dataset.id || d.organizationId === dataset.organizationId
+  );
   if (idx >= 0) {
     globalForDatasetStore.allDatasets[idx] = dataset;
   } else {

@@ -16,6 +16,7 @@ import {
   Shield,
   LogOut,
 } from "lucide-react";
+import { performLogout } from "@/lib/org-context";
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -97,9 +98,13 @@ export function AdminSidebar() {
               <p className="text-[10px] text-emerald-400">Super Admin</p>
             </div>
           </div>
-          <Link href="/admin/login" className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-400 transition">
-            <LogOut className="h-4 w-4" />
-          </Link>
+          <button
+            onClick={performLogout}
+            title="Log Out & Return to Organization Selection"
+            className="text-xs text-slate-400 hover:text-rose-400 font-semibold cursor-pointer transition"
+          >
+            Logout
+          </button>
         </div>
       </div>
     </aside>

@@ -4,6 +4,11 @@ import type { NextRequest } from "next/server";
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Redirect old admin login directly to organization selection page
+  if (pathname === "/admin/login") {
+    return NextResponse.redirect(new URL("/onboarding/organization", request.url));
+  }
+
   // Static assets & API bypass
   if (
     pathname.startsWith("/_next") ||
@@ -11,21 +16,17 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/favicon.ico") ||
     pathname === "/" ||
     pathname === "/login" ||
-    pathname === "/register" ||
-    pathname === "/admin/login"
+    pathname === "/register"
   ) {
     return NextResponse.next();
   }
 
   // Admin Protected Routes
   if (pathname.startsWith("/admin")) {
-    const adminToken = request.cookies.get("admin_session")?.value;
-    // Allow demo access or check session
     return NextResponse.next();
   }
 
   // Organization Protected Routes
-  const orgToken = request.cookies.get("org_session")?.value;
   return NextResponse.next();
 }
 

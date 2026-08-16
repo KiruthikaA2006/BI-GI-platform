@@ -262,7 +262,7 @@ export default function AdminUsersManagementPage() {
           <div className="bg-white border border-stone-300 rounded-3xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-stone-700">
-                <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
+                <thead className="bg-stone-100 text-stone-700 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
                   <tr>
                     <th className="p-4">User</th>
                     <th className="p-4">Designation</th>
@@ -272,47 +272,47 @@ export default function AdminUsersManagementPage() {
                     <th className="p-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-stone-200">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-800/40 transition">
+                    <tr key={user.id} className="hover:bg-stone-50 transition">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center font-bold text-emerald-300 text-sm">
+                          <div className="h-9 w-9 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center font-bold text-emerald-800 text-sm">
                             {user.name.charAt(0)}
                           </div>
                           <div>
-                            <span className="font-bold text-white text-xs block">{user.name}</span>
-                            <span className="text-[11px] text-slate-400 block">{user.email}</span>
+                            <span className="font-bold text-stone-900 text-xs block">{user.name}</span>
+                            <span className="text-[11px] text-stone-500 block">{user.email}</span>
                           </div>
                         </div>
                       </td>
 
-                      <td className="p-4 text-slate-300 font-medium">{user.designation}</td>
+                      <td className="p-4 text-stone-800 font-medium">{user.designation}</td>
 
                       <td className="p-4">
                         {user.department ? (
-                          <span className="bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg text-slate-200 text-[11px] font-semibold">
+                          <span className="bg-stone-100 border border-stone-300 px-2.5 py-1 rounded-lg text-stone-800 text-[11px] font-bold">
                             {user.department.name}
                           </span>
                         ) : (
-                          <span className="text-slate-500 text-[11px]">Unassigned</span>
+                          <span className="text-stone-400 text-[11px]">Unassigned</span>
                         )}
                       </td>
 
                       <td className="p-4">
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-emerald-50 text-emerald-800 border border-emerald-200">
                           {user.role.replace("_", " ")}
                         </span>
                       </td>
 
                       <td className="p-4">
                         {user.status === "active" ? (
-                          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                            <CheckCircle2 className="h-3 w-3" /> Active
+                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                            <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                            <XCircle className="h-3 w-3" /> Deactivated
+                          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                            <XCircle className="h-3 w-3 text-rose-600" /> Deactivated
                           </span>
                         )}
                       </td>
@@ -321,17 +321,17 @@ export default function AdminUsersManagementPage() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openEditModal(user)}
-                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1"
+                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 text-xs font-semibold flex items-center gap-1 transition"
                             title="Edit Role / Department"
                           >
                             <Edit className="h-3.5 w-3.5" /> Edit
                           </button>
                           <button
                             onClick={() => handleToggleDeactivate(user.id)}
-                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 ${
+                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${
                               user.status === "active"
-                                ? "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20"
-                                : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                                ? "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
+                                : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
                             }`}
                           >
                             {user.status === "active" ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
@@ -350,13 +350,13 @@ export default function AdminUsersManagementPage() {
 
       {/* CREATE / EDIT USER MODAL */}
       {(showCreateModal || editingUser) && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form
             onSubmit={editingUser ? handleUpdateUser : handleCreateUser}
-            className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl"
+            className="bg-white border border-stone-300 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl text-stone-900"
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-base font-bold text-white">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <h3 className="text-base font-bold text-stone-900">
                 {editingUser ? "Edit User, Assign Role & Department" : "Create New Admin User"}
               </h3>
               <button
@@ -365,7 +365,7 @@ export default function AdminUsersManagementPage() {
                   setShowCreateModal(false);
                   setEditingUser(null);
                 }}
-                className="text-slate-400 text-xs"
+                className="text-stone-400 hover:text-stone-700 text-xs font-bold"
               >
                 ✕
               </button>
@@ -373,44 +373,44 @@ export default function AdminUsersManagementPage() {
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Full Name</label>
+                <label className="block text-stone-700 font-bold mb-1">Full Name</label>
                 <input
                   type="text"
                   required
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Email Address</label>
+                <label className="block text-stone-700 font-bold mb-1">Email Address</label>
                 <input
                   type="email"
                   required
                   value={userEmail}
                   onChange={(e) => setUserEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-medium"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-400 font-semibold mb-1">Designation</label>
+                <label className="block text-stone-700 font-bold mb-1">Designation</label>
                 <input
                   type="text"
                   value={userDesignation}
                   onChange={(e) => setUserDesignation(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Assign Role</label>
+                  <label className="block text-stone-700 font-bold mb-1">Assign Role</label>
                   <select
                     value={userRole}
                     onChange={(e) => setUserRole(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-bold"
                   >
                     <option value="SUPER_ADMIN">Super Admin</option>
                     <option value="ORGANIZATION_ADMIN">Organization Admin</option>
@@ -421,11 +421,11 @@ export default function AdminUsersManagementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 font-semibold mb-1">Assign Department</label>
+                  <label className="block text-stone-700 font-bold mb-1">Assign Department</label>
                   <select
                     value={userDeptId}
                     onChange={(e) => setUserDeptId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                    className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 font-bold"
                   >
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -437,20 +437,20 @@ export default function AdminUsersManagementPage() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-800 flex justify-end gap-2">
+            <div className="pt-4 border-t border-stone-200 flex justify-end gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setShowCreateModal(false);
                   setEditingUser(null);
                 }}
-                className="bg-slate-800 px-4 py-2 rounded-xl text-xs font-semibold text-slate-300"
+                className="bg-stone-100 hover:bg-stone-200 border border-stone-300 px-4 py-2 rounded-xl text-xs font-bold text-stone-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow transition"
               >
                 {editingUser ? "Update User & Assign" : "Create User"}
               </button>

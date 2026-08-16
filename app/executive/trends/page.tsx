@@ -57,7 +57,7 @@ export default function ExecutiveTrendsPage() {
                 </p>
               </div>
               <Link
-                href="/analyst/preparation"
+                href="/data-center"
                 className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition"
               >
                 <span>Import CSV Dataset for {currentOrgName} →</span>

@@ -63,7 +63,7 @@ export default function ManagerWorkspacePage() {
                   Upload a dataset containing sales rep records to automatically populate team capacity and roster for <strong>{currentOrgName}</strong>.
                 </p>
                 <Link
-                  href="/analyst/preparation"
+                  href="/data-center"
                   className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition"
                 >
                   <span>Import Dataset for {currentOrgName} →</span>

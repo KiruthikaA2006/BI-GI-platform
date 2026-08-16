@@ -76,6 +76,7 @@ export function Sidebar({ currentRole }: SidebarProps) {
   else if (pathname.startsWith("/executive")) resolvedRole = "EXECUTIVE";
   else if (pathname.startsWith("/manager")) resolvedRole = "DEPARTMENT_MANAGER";
   else if (pathname.startsWith("/analyst")) resolvedRole = "ANALYST";
+  else if (resolvedRole === "SUPER_ADMIN" || !resolvedRole) resolvedRole = "ORGANIZATION_ADMIN";
 
   const normalizedRole = resolvedRole.toUpperCase();
 

@@ -36,11 +36,11 @@ export default function AdminRolesPermissionsPage() {
 
         <main className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
           {/* Top Banner */}
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-white border border-stone-300 p-6 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
             <div className="space-y-1">
-              <span className="text-[10px] font-extrabold uppercase text-purple-400">Admin Architecture Node: PERMISSIONS</span>
-              <h2 className="text-xl font-black text-white">Roles, Access & Custom Permissions</h2>
-              <p className="text-xs text-slate-400">Configuring fine-grained role-based access control (RBAC) across platform modules.</p>
+              <span className="text-[10px] font-extrabold uppercase text-purple-800">Admin Architecture Node: PERMISSIONS</span>
+              <h2 className="text-xl font-black text-stone-900">Roles, Access & Custom Permissions</h2>
+              <p className="text-xs text-stone-600">Configuring fine-grained role-based access control (RBAC) across platform modules.</p>
             </div>
           </div>
 
@@ -50,33 +50,33 @@ export default function AdminRolesPermissionsPage() {
               <button
                 key={r.id}
                 onClick={() => setSelectedRole(r.id)}
-                className={`p-4 rounded-2xl border text-left transition ${
+                className={`p-4 rounded-2xl border text-left transition shadow-sm ${
                   selectedRole === r.id
-                    ? "bg-purple-950/60 border-purple-500 ring-2 ring-purple-500/40"
-                    : "bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                    ? "bg-purple-50 border-purple-500 ring-2 ring-purple-500/20"
+                    : "bg-white border-stone-300 text-stone-600 hover:text-stone-900 hover:border-purple-300"
                 }`}
               >
-                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-slate-950 text-purple-400 border border-purple-500/30">
+                <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200">
                   {r.scope}
                 </span>
-                <h3 className="text-sm font-bold text-white mt-2">{r.name}</h3>
-                <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{r.desc}</p>
+                <h3 className="text-sm font-bold text-stone-900 mt-2">{r.name}</h3>
+                <p className="text-[11px] text-stone-500 mt-1 line-clamp-2">{r.desc}</p>
               </button>
             ))}
           </div>
 
           {/* Permissions Access Matrix Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-purple-400" />
+          <div className="bg-white border border-stone-300 rounded-3xl overflow-hidden shadow-sm">
+            <div className="p-4 border-b border-stone-200 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-purple-600" />
                 Access Control Matrix
               </h3>
-              <span className="text-xs text-slate-400">Custom Role Overrides Active</span>
+              <span className="text-xs text-stone-500 font-medium">Custom Role Overrides Active</span>
             </div>
 
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <table className="w-full text-left text-xs text-stone-700">
+              <thead className="bg-stone-100 text-stone-700 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
                 <tr>
                   <th className="p-4">Platform Module</th>
                   <th className="p-4 text-center">Super Admin</th>
@@ -86,15 +86,15 @@ export default function AdminRolesPermissionsPage() {
                   <th className="p-4 text-center">Analyst</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-stone-200">
                 {permissionsMatrix.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-800/40 transition">
-                    <td className="p-4 font-bold text-white">{row.module}</td>
-                    <td className="p-4 text-center">{row.superAdmin ? <Check className="h-4 w-4 text-emerald-400 mx-auto" /> : <X className="h-4 w-4 text-rose-500/40 mx-auto" />}</td>
-                    <td className="p-4 text-center">{row.orgAdmin ? <Check className="h-4 w-4 text-emerald-400 mx-auto" /> : <X className="h-4 w-4 text-rose-500/40 mx-auto" />}</td>
-                    <td className="p-4 text-center">{row.exec ? <Check className="h-4 w-4 text-emerald-400 mx-auto" /> : <X className="h-4 w-4 text-rose-500/40 mx-auto" />}</td>
-                    <td className="p-4 text-center">{row.manager ? <Check className="h-4 w-4 text-emerald-400 mx-auto" /> : <X className="h-4 w-4 text-rose-500/40 mx-auto" />}</td>
-                    <td className="p-4 text-center">{row.analyst ? <Check className="h-4 w-4 text-emerald-400 mx-auto" /> : <X className="h-4 w-4 text-rose-500/40 mx-auto" />}</td>
+                  <tr key={i} className="hover:bg-stone-50 transition">
+                    <td className="p-4 font-bold text-stone-900">{row.module}</td>
+                    <td className="p-4 text-center">{row.superAdmin ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : <X className="h-4 w-4 text-stone-300 mx-auto" />}</td>
+                    <td className="p-4 text-center">{row.orgAdmin ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : <X className="h-4 w-4 text-stone-300 mx-auto" />}</td>
+                    <td className="p-4 text-center">{row.exec ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : <X className="h-4 w-4 text-stone-300 mx-auto" />}</td>
+                    <td className="p-4 text-center">{row.manager ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : <X className="h-4 w-4 text-stone-300 mx-auto" />}</td>
+                    <td className="p-4 text-center">{row.analyst ? <Check className="h-4 w-4 text-emerald-600 mx-auto" /> : <X className="h-4 w-4 text-stone-300 mx-auto" />}</td>
                   </tr>
                 ))}
               </tbody>
