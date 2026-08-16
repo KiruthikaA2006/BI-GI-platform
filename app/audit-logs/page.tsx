@@ -1,25 +1,40 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { History, ShieldCheck, User, Calendar, Terminal, Download, Filter } from "lucide-react";
-import { mockAuditLogs } from "@/lib/mock-data";
 import { exportToCSV } from "@/lib/export-utils";
+import { getActiveOrganization } from "@/lib/org-context";
 
 export default function AuditLogsPage() {
-  const [logs, setLogs] = useState(mockAuditLogs);
+  const [logs, setLogs] = useState<any[]>([]);
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [actionFilter, setActionFilter] = useState("ALL");
+  const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
+
+  useEffect(() => {
+    const org = getActiveOrganization();
+    if (org && org.name) setCurrentOrgName(org.name);
+
+    fetch("/api/audit-logs")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.logs)) {
+          setLogs(data.logs);
+        }
+      })
+      .catch((err) => console.error("Error fetching audit logs:", err));
+  }, []);
 
   const filteredLogs = logs.filter((log) => {
-    const matchesRole = roleFilter === "ALL" || log.userRole.toUpperCase() === roleFilter;
-    const matchesAction = actionFilter === "ALL" || log.action.toUpperCase() === actionFilter;
+    const matchesRole = roleFilter === "ALL" || (log.userRole && log.userRole.toUpperCase() === roleFilter);
+    const matchesAction = actionFilter === "ALL" || (log.action && log.action.toUpperCase() === actionFilter);
     return matchesRole && matchesAction;
   });
 
   const handleExportCSV = () => {
-    exportToCSV("organization_security_audit_logs", filteredLogs);
+    exportToCSV(`security_audit_logs_${currentOrgName.toLowerCase().replace(/\s+/g, "_")}`, filteredLogs);
   };
 
   return (
@@ -93,47 +108,57 @@ export default function AuditLogsPage() {
 
           {/* Audit Logs Table */}
           <div className="bg-white border border-stone-300 rounded-3xl overflow-hidden shadow-sm">
-            <table className="w-full text-left text-xs text-stone-700">
-              <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
-                <tr>
-                  <th className="p-4">Timestamp</th>
-                  <th className="p-4">User & Role</th>
-                  <th className="p-4">Action</th>
-                  <th className="p-4">Target Entity</th>
-                  <th className="p-4">IP Address</th>
-                  <th className="p-4">Payload Delta</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-200">
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-stone-50 transition">
-                    <td className="p-4 text-stone-500 text-[11px] font-mono">{log.createdAt}</td>
-                    <td className="p-4">
-                      <span className="font-bold text-stone-900 block">{log.userName}</span>
-                      <span className="text-[10px] text-indigo-600 font-bold">{log.userRole}</span>
-                    </td>
-                    <td className="p-4">
-                      <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="p-4 text-stone-800 font-medium">
-                      {log.entity} ({log.entityId})
-                    </td>
-                    <td className="p-4 font-mono text-stone-500 text-[11px]">{log.ipAddress}</td>
-                    <td className="p-4">
-                      <details className="cursor-pointer text-stone-600 hover:text-stone-900">
-                        <summary className="text-[11px] font-mono underline font-bold">View JSON Diff</summary>
-                        <div className="mt-2 p-2 bg-stone-50 rounded-xl border border-stone-200 text-[10px] font-mono space-y-1">
-                          {log.oldValue && <p className="text-rose-600 font-semibold">- Old: {log.oldValue}</p>}
-                          {log.newValue && <p className="text-emerald-700 font-semibold">+ New: {log.newValue}</p>}
-                        </div>
-                      </details>
-                    </td>
+            {filteredLogs.length === 0 ? (
+              <div className="p-12 text-center space-y-3">
+                <History className="h-10 w-10 text-stone-400 mx-auto" />
+                <h4 className="text-base font-bold text-stone-900">No Audit Logs Recorded Yet</h4>
+                <p className="text-xs text-stone-500 max-w-md mx-auto">
+                  Security events, role assignments, dataset imports, and configuration updates for <span className="font-semibold text-stone-800">{currentOrgName}</span> will be recorded here in real-time.
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs text-stone-700">
+                <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
+                  <tr>
+                    <th className="p-4">Timestamp</th>
+                    <th className="p-4">User & Role</th>
+                    <th className="p-4">Action</th>
+                    <th className="p-4">Target Entity</th>
+                    <th className="p-4">IP Address</th>
+                    <th className="p-4">Payload Delta</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-stone-200">
+                  {filteredLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-stone-50 transition">
+                      <td className="p-4 text-stone-500 text-[11px] font-mono">{log.createdAt}</td>
+                      <td className="p-4">
+                        <span className="font-bold text-stone-900 block">{log.userName}</span>
+                        <span className="text-[10px] text-indigo-600 font-bold">{log.userRole}</span>
+                      </td>
+                      <td className="p-4">
+                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="p-4 text-stone-800 font-medium">
+                        {log.entity} ({log.entityId})
+                      </td>
+                      <td className="p-4 font-mono text-stone-500 text-[11px]">{log.ipAddress}</td>
+                      <td className="p-4">
+                        <details className="cursor-pointer text-stone-600 hover:text-stone-900">
+                          <summary className="text-[11px] font-mono underline font-bold">View JSON Diff</summary>
+                          <div className="mt-2 p-2 bg-stone-50 rounded-xl border border-stone-200 text-[10px] font-mono space-y-1">
+                            {log.oldValue && <p className="text-rose-600 font-semibold">- Old: {log.oldValue}</p>}
+                            {log.newValue && <p className="text-emerald-700 font-semibold">+ New: {log.newValue}</p>}
+                          </div>
+                        </details>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </main>
       </div>

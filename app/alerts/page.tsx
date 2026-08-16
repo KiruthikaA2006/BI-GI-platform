@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { Bell, Plus, ShieldAlert, CheckCircle2, Download, X } from "lucide-react";
 import { mockAlerts } from "@/lib/mock-data";
 import { exportToCSV } from "@/lib/export-utils";
+import { getActiveOrganization } from "@/lib/org-context";
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState(mockAlerts);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
+  const [stats, setStats] = useState<any>(null);
 
   // New rule form states
   const [ruleName, setRuleName] = useState("");
@@ -17,6 +21,21 @@ export default function AlertsPage() {
   const [condition, setCondition] = useState("Drops below $220,000");
   const [severity, setSeverity] = useState<"CRITICAL" | "HIGH" | "MEDIUM">("HIGH");
   const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    const org = getActiveOrganization();
+    if (org && org.name) setCurrentOrgName(org.name);
+
+    fetch("/api/dashboard/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStats(data);
+          if (data.organizationName) setCurrentOrgName(data.organizationName);
+        }
+      })
+      .catch((err) => console.error("Error fetching stats for alerts:", err));
+  }, []);
 
   const toggleAlertStatus = (id: string) => {
     setAlerts(
@@ -54,94 +73,110 @@ export default function AlertsPage() {
     <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900">
       <Sidebar currentRole="ORGANIZATION_ADMIN" />
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <Header title="Threshold Alerts" subtitle="Configure automated metric threshold alerts, risk detectors & notification triggers" />
+        <Header title={`Threshold Alerts — ${currentOrgName}`} subtitle="Configure automated metric threshold alerts, risk detectors & notification triggers" />
 
         <main className="p-6 space-y-6 max-w-[1600px] mx-auto w-full">
           {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-stone-300 p-6 rounded-3xl shadow-sm">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase text-indigo-700">Organization Scope • Alerts</span>
-              <h2 className="text-xl font-black text-stone-900">Active Alert Trigger Rules</h2>
-              <p className="text-xs text-stone-500">Monitor revenue drops, CAC spikes, dataset failures, and target risks</p>
+          <div className="bg-white border border-stone-300 p-6 rounded-3xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-extrabold uppercase text-amber-700">Threshold Governance • {currentOrgName}</span>
+              <h1 className="text-2xl font-black text-stone-900">Operational Risk & Threshold Rules • {currentOrgName}</h1>
+              <p className="text-xs text-stone-600">Metric boundary guards and trigger rules for <strong>{currentOrgName}</strong>.</p>
             </div>
-            <div className="flex items-center gap-3">
+
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
+                className="bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-800 font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2"
               >
                 <Download className="h-4 w-4" />
-                <span>Export Alerts CSV</span>
+                <span>Export Alerts</span>
               </button>
-
               <button
                 onClick={() => setShowConfigModal(true)}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 transition"
+                className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                <span>Configure New Rule</span>
+                <span>Add Threshold Guard Rule</span>
               </button>
             </div>
           </div>
 
-          {/* Alerts List */}
-          <div className="space-y-4">
-            {alerts.map((alt) => (
-              <div
-                key={alt.id}
-                className="bg-white border border-stone-300 p-6 rounded-3xl shadow-sm space-y-3 transition flex flex-col md:flex-row md:items-center justify-between gap-4"
+          {/* Zero Dataset Empty State Guard */}
+          {stats && (stats.rawRowsCount === 0 || !stats.datasetInfo) ? (
+            <div className="bg-white border border-stone-300 p-8 md:p-12 rounded-3xl text-center space-y-4 shadow-sm">
+              <div className="h-16 w-16 bg-amber-50 border border-amber-200 text-amber-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                <Bell className="h-8 w-8" />
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <h3 className="text-xl font-black text-stone-900">No Dataset Uploaded for {currentOrgName}</h3>
+                <p className="text-xs text-stone-600 leading-relaxed">
+                  Organization <strong>{currentOrgName}</strong> does not have any imported CSV datasets yet. Operational alerts and threshold guards are evaluated strictly against active dataset rows.
+                </p>
+              </div>
+              <Link
+                href="/analyst/preparation"
+                className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition"
               >
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`p-3 rounded-2xl border ${
-                      alt.severity === "CRITICAL"
-                        ? "bg-rose-50 text-rose-600 border-rose-200"
-                        : alt.severity === "HIGH"
-                        ? "bg-amber-50 text-amber-600 border-amber-200"
-                        : "bg-blue-50 text-blue-600 border-blue-200"
-                    }`}
-                  >
-                    <ShieldAlert className="h-6 w-6" />
-                  </div>
+                <span>Import CSV Dataset for {currentOrgName} →</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {alerts.map((alt) => (
+                <div
+                  key={alt.id}
+                  className={`bg-white border p-5 rounded-2xl transition space-y-3 shadow-sm ${
+                    alt.severity === "CRITICAL"
+                      ? "border-rose-300 hover:border-rose-400"
+                      : alt.severity === "HIGH"
+                      ? "border-amber-300 hover:border-amber-400"
+                      : "border-stone-300 hover:border-stone-400"
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase ${
+                            alt.severity === "CRITICAL"
+                              ? "bg-rose-50 border-rose-200 text-rose-800"
+                              : alt.severity === "HIGH"
+                              ? "bg-amber-50 border-amber-200 text-amber-800"
+                              : "bg-stone-100 border-stone-300 text-stone-700"
+                          }`}
+                        >
+                          {alt.severity} THRESHOLD
+                        </span>
+                        <span className="text-xs font-bold text-stone-900">{alt.name}</span>
+                      </div>
+                      <p className="text-xs text-stone-600 font-medium">{alt.description}</p>
+                      <div className="flex items-center gap-4 text-[11px] text-stone-500 font-mono pt-1">
+                        <span>Metric: {alt.metric}</span>
+                        <span>•</span>
+                        <span>Condition: {alt.condition}</span>
+                        <span>•</span>
+                        <span>Triggered: {alt.createdAt}</span>
+                      </div>
+                    </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-stone-900">{alt.name}</h3>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
-                          alt.severity === "CRITICAL"
-                            ? "bg-rose-100 text-rose-700 border-rose-300"
-                            : alt.severity === "HIGH"
-                            ? "bg-amber-100 text-amber-700 border-amber-300"
-                            : "bg-blue-100 text-blue-700 border-blue-300"
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => toggleAlertStatus(alt.id)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
+                          alt.isActive
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                            : "bg-stone-100 border-stone-300 text-stone-500"
                         }`}
                       >
-                        {alt.severity}
-                      </span>
-                    </div>
-                    <p className="text-xs text-stone-600">{alt.description}</p>
-                    <div className="flex items-center gap-4 text-[11px] text-stone-500 pt-1">
-                      <span>Metric: <strong className="text-stone-800">{alt.metric}</strong></span>
-                      <span>Condition: <strong className="text-stone-800">{alt.condition}</strong></span>
-                      <span>Triggered: {alt.createdAt}</span>
+                        {alt.isActive ? "Active Rule" : "Paused"}
+                      </button>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => toggleAlertStatus(alt.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
-                      alt.isActive
-                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                        : "bg-stone-100 border-stone-300 text-stone-500"
-                    }`}
-                  >
-                    {alt.isActive ? "Active Rule" : "Paused"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           {/* Configure Rule Modal */}
           {showConfigModal && (

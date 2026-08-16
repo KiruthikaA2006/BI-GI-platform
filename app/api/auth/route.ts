@@ -6,13 +6,26 @@ import { Role } from "@/app/generated/prisma/enums";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, password, role, action, organizationId: bodyOrgId, organizationName: bodyOrgName } = body;
+    const {
+      name: bodyName,
+      email,
+      password,
+      role,
+      action,
+      designation: bodyDesignation,
+      organizationId: bodyOrgId,
+      organizationName: bodyOrgName,
+    } = body;
+
+    if (!email) {
+      return NextResponse.json({ success: false, message: "Email is required" }, { status: 400 });
+    }
 
     const cookieStore = await cookies();
     const activeOrgIdCookie = cookieStore.get("active_org_id")?.value;
     const activeOrgNameCookie = cookieStore.get("active_org_name")?.value;
 
-    const chosenRole = role || (action === "admin_login" ? Role.SUPER_ADMIN : Role.ORGANIZATION_ADMIN);
+    const chosenRole = (role || (action === "admin_login" ? Role.SUPER_ADMIN : Role.ORGANIZATION_ADMIN)) as Role;
 
     let targetOrgId: string | null = chosenRole === Role.SUPER_ADMIN
       ? null
@@ -22,14 +35,13 @@ export async function POST(req: Request) {
       ? "Platform Administration"
       : bodyOrgName || (activeOrgNameCookie ? decodeURIComponent(activeOrgNameCookie) : null);
 
-    // Resolve or verify real organization in PostgreSQL database for non-super admin users
+    let targetOrg: any = null;
+
+    // Resolve or create target Organization in PostgreSQL
     if (chosenRole !== Role.SUPER_ADMIN) {
       try {
-        let dbOrg = null;
-
-        // 1. Try finding existing organization in PostgreSQL by ID, slug, or name
         if (targetOrgId || targetOrgName) {
-          dbOrg = await prisma.organization.findFirst({
+          targetOrg = await prisma.organization.findFirst({
             where: {
               OR: [
                 ...(targetOrgId ? [{ id: targetOrgId }, { slug: targetOrgId }] : []),
@@ -39,62 +51,111 @@ export async function POST(req: Request) {
           });
         }
 
-        // 2. If not found, try finding existing user membership in PostgreSQL by email
-        if (!dbOrg && email) {
+        if (!targetOrg && email) {
           const userMember = await prisma.organizationMember.findFirst({
             where: { user: { email } },
             include: { organization: true },
           });
           if (userMember?.organization) {
-            dbOrg = userMember.organization;
-          } else {
-            const user = await prisma.user.findUnique({
-              where: { email },
-              include: { organization: true },
-            });
-            if (user?.organization) {
-              dbOrg = user.organization;
-            }
+            targetOrg = userMember.organization;
           }
         }
 
-        // 3. If organization exists in PostgreSQL, use its exact database ID & Name
-        if (dbOrg) {
-          targetOrgId = dbOrg.id;
-          targetOrgName = dbOrg.name;
-        } else {
-          // 4. If organization does not exist in PostgreSQL yet, create it in Organization table
+        if (!targetOrg) {
           const fallbackName = targetOrgName || "Organization Workspace";
           const fallbackSlug = (targetOrgId || fallbackName).toLowerCase().replace(/[^a-z0-9]/g, "-");
-          const createdOrg = await prisma.organization.create({
+          targetOrg = await prisma.organization.create({
             data: {
               id: targetOrgId || fallbackSlug,
               name: fallbackName,
               slug: fallbackSlug,
             },
           });
-          targetOrgId = createdOrg.id;
-          targetOrgName = createdOrg.name;
         }
+
+        targetOrgId = targetOrg.id;
+        targetOrgName = targetOrg.name;
       } catch (dbErr) {
         console.warn("PostgreSQL organization resolution warning:", dbErr);
       }
     }
 
+    // Default designation based on role if not provided
+    const defaultDesignation =
+      bodyDesignation ||
+      (chosenRole === Role.SUPER_ADMIN
+        ? "Platform Administrator"
+        : chosenRole === Role.ORGANIZATION_ADMIN
+        ? "Organization Administrator"
+        : chosenRole === Role.EXECUTIVE
+        ? "Executive Leader"
+        : chosenRole === Role.DEPARTMENT_MANAGER
+        ? "Department Manager"
+        : "Data Analyst");
+
+    // Look up or create User in PostgreSQL database
+    let dbUser: any = null;
+
+    try {
+      dbUser = await prisma.user.findUnique({
+        where: { email },
+        include: { organization: true, memberships: true },
+      });
+
+      if (!dbUser && (action === "signup" || action === "login" || action === "register")) {
+        // Formulate readable display name
+        const emailPrefix = email.split("@")[0].replace(/[^a-zA-Z]/g, " ").trim();
+        const formattedPrefix = emailPrefix ? emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) : "Employee";
+        const fullName = bodyName || formattedPrefix;
+
+        dbUser = await prisma.user.create({
+          data: {
+            organizationId: targetOrgId,
+            name: fullName,
+            email,
+            passwordHash: password || "hashed_secure_password",
+            role: chosenRole,
+            designation: defaultDesignation,
+            status: "active",
+          },
+        });
+
+        // Also create OrganizationMember record if targetOrgId exists
+        if (targetOrgId) {
+          await prisma.organizationMember.upsert({
+            where: {
+              userId_organizationId: {
+                userId: dbUser.id,
+                organizationId: targetOrgId,
+              },
+            },
+            create: {
+              organizationId: targetOrgId,
+              userId: dbUser.id,
+              role: chosenRole,
+              designation: defaultDesignation,
+              status: "active",
+            },
+            update: {
+              role: chosenRole,
+              designation: defaultDesignation,
+              status: "active",
+            },
+          });
+        }
+      }
+    } catch (userErr) {
+      console.warn("PostgreSQL User creation/lookup warning:", userErr);
+    }
+
+    const userName = dbUser?.name || bodyName || (email.split("@")[0].replace(/[^a-zA-Z]/g, " ") || "Employee User");
+
     const userSession = {
-      id: `user_${chosenRole.toLowerCase()}_01`,
-      name:
-        chosenRole === Role.SUPER_ADMIN
-          ? "Platform Super Admin"
-          : chosenRole === Role.ORGANIZATION_ADMIN
-          ? "Kiruthika Anand (Org Admin)"
-          : chosenRole === Role.EXECUTIVE
-          ? "Chief Executive Officer"
-          : chosenRole === Role.DEPARTMENT_MANAGER
-          ? "Sales Department Manager"
-          : "Senior Data Analyst",
-      email: email || `${chosenRole.toLowerCase()}@${targetOrgId || "platform"}.com`,
+      id: dbUser?.id || `user_${chosenRole.toLowerCase()}_${Date.now()}`,
+      name: userName,
+      email,
       role: chosenRole,
+      designation: dbUser?.designation || defaultDesignation,
       organizationId: targetOrgId,
       organizationName: targetOrgName,
     };
@@ -122,13 +183,15 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Successfully authenticated as ${chosenRole} for ${targetOrgName}`,
+      message: action === "signup"
+        ? `Account created successfully for ${userName} in ${targetOrgName || "Organization"}`
+        : `Successfully authenticated as ${userName} (${chosenRole})`,
       redirectUrl,
       user: userSession,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Auth API Error:", error);
-    return NextResponse.json({ success: false, message: "Authentication failed" }, { status: 500 });
+    return NextResponse.json({ success: false, message: `Authentication failed: ${error?.message || error}` }, { status: 500 });
   }
 }
 

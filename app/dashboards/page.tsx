@@ -20,6 +20,7 @@ import {
   Building2,
 } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
+import { ColorfulTrendChart } from "@/components/analytics/colorful-trend-chart";
 
 export default function DashboardsPage() {
   const [activeTab, setActiveTab] = useState<"kpi_views" | "reports">("kpi_views");
@@ -47,7 +48,7 @@ export default function DashboardsPage() {
 
   const metrics = stats?.metrics;
   const trends = stats?.trends || [];
-  const hasRealData = stats?.source === "database" && metrics;
+  const hasRealData = Boolean(stats && stats.rawRowsCount > 0 && stats.datasetInfo);
 
   return (
     <div className="flex h-screen bg-[#e4dac9] text-stone-900 overflow-hidden selection:bg-blue-500">
@@ -96,111 +97,100 @@ export default function DashboardsPage() {
             </div>
           </div>
 
-          {/* KPI Views Tab */}
-          {activeTab === "kpi_views" && (
+          {loading ? (
+            <div className="animate-pulse space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+              </div>
+              <div className="bg-white/80 h-72 rounded-3xl border border-stone-300 shadow-sm" />
+            </div>
+          ) : (
+            <>
+              {/* KPI Views Tab */}
+              {activeTab === "kpi_views" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase text-stone-500">Revenue & Finance</span>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                      {hasRealData ? "Live DB Data" : "Database Ready"}
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${hasRealData ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-amber-700 bg-amber-50 border border-amber-200"}`}>
+                      {hasRealData ? "Live DB Data" : "No Dataset Uploaded"}
                     </span>
                   </div>
                   <h3 className="text-2xl font-black text-stone-900">
                     {hasRealData && metrics.totalRevenue
                       ? `$${(metrics.totalRevenue / 100).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-                      : "$248,500"}
+                      : "$0"}
                   </h3>
                   <p className="text-xs text-stone-600">
-                    Gross Margin: {hasRealData && metrics.grossMargin ? `${metrics.grossMargin}%` : "64.2%"} • Profit: {hasRealData && metrics.profit ? `$${(metrics.profit / 100).toLocaleString()}` : "$82,400"}
+                    Gross Margin: {hasRealData && metrics.grossMargin ? `${metrics.grossMargin}%` : "0.0%"} • Profit: {hasRealData && metrics.profit ? `$${(metrics.profit / 100).toLocaleString()}` : "$0"}
                   </p>
                 </div>
 
                 <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase text-stone-500">Sales Velocity</span>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                      On Track
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${hasRealData ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-stone-500 bg-stone-100 border border-stone-200"}`}>
+                      {hasRealData ? "On Track" : "Inactive"}
                     </span>
                   </div>
                   <h3 className="text-2xl font-black text-stone-900">
-                    {hasRealData && metrics.totalSales ? `${metrics.totalSales.toLocaleString()} Deals` : "14 Days Win Cycle"}
+                    {hasRealData && metrics.totalSales ? `${metrics.totalSales.toLocaleString()} Deals` : "0 Deals"}
                   </h3>
                   <p className="text-xs text-stone-600">
-                    Avg Deal Size: {hasRealData && metrics.avgDealSize ? `$${metrics.avgDealSize.toLocaleString()}` : "$18,400"} • Growth: {hasRealData && metrics.revenueGrowth != null ? `${metrics.revenueGrowth}%` : "+18.4%"}
+                    Avg Deal Size: {hasRealData && metrics.avgDealSize ? `$${metrics.avgDealSize.toLocaleString()}` : "$0"} • Growth: {hasRealData && metrics.revenueGrowth != null ? `${metrics.revenueGrowth}%` : "0.0%"}
                   </p>
                 </div>
 
                 <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase text-stone-500">Customer Success</span>
-                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">
-                      Attention
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${hasRealData ? "text-emerald-700 bg-emerald-50 border border-emerald-200" : "text-stone-500 bg-stone-100 border border-stone-200"}`}>
+                      {hasRealData ? "Active" : "Inactive"}
                     </span>
                   </div>
                   <h3 className="text-2xl font-black text-stone-900">
-                    {hasRealData && metrics.churnRate != null ? `${metrics.churnRate.toFixed(2)}% Churn Rate` : "1.82% Churn Rate"}
+                    {hasRealData && metrics.churnRate != null ? `${metrics.churnRate.toFixed(2)}% Churn Rate` : "0.00% Churn Rate"}
                   </h3>
                   <p className="text-xs text-stone-600">
-                    Active Customers: {hasRealData && metrics.activeCustomers ? metrics.activeCustomers.toLocaleString() : "4,850"} • Alerts: {hasRealData && metrics.activeAlertsCount != null ? metrics.activeAlertsCount : "2 Active"}
+                    Active Customers: {hasRealData && metrics.activeCustomers ? metrics.activeCustomers.toLocaleString() : "0"} • Alerts: {hasRealData && metrics.activeAlertsCount != null ? metrics.activeAlertsCount : "0 Active"}
                   </p>
                 </div>
               </div>
 
               {/* Real Monthly Trends Visualizer */}
-              <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-black text-stone-900 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-indigo-600" />
-                      <span>Monthly Performance & Revenue Trends</span>
-                    </h3>
-                    <p className="text-xs text-stone-500">
-                      Visualizing monthly aggregated dataset trends in PostgreSQL for <strong>{currentOrgName}</strong>
+              {!hasRealData ? (
+                <div className="bg-white border border-stone-300 p-8 md:p-12 rounded-3xl text-center space-y-4 shadow-sm">
+                  <div className="h-16 w-16 bg-blue-50 border border-blue-200 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                    <BarChart3 className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-2 max-w-md mx-auto">
+                    <h3 className="text-xl font-black text-stone-900">No Trend Analytics Available for {currentOrgName}</h3>
+                    <p className="text-xs text-stone-600 leading-relaxed">
+                      Organization <strong>{currentOrgName}</strong> does not have any imported CSV datasets yet. Trend visualizers and sales velocity curves are generated strictly after uploading a dataset.
                     </p>
                   </div>
-                  <span className="text-xs font-bold bg-indigo-50 text-indigo-800 px-3 py-1 rounded-full border border-indigo-200">
-                    {trends.length > 0 ? `${trends.length} Months Tracked` : "Real-Time Engine"}
-                  </span>
+                  <Link
+                    href="/data-center"
+                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition"
+                  >
+                    <span>Import CSV Dataset for {currentOrgName} →</span>
+                  </Link>
                 </div>
-
-                {trends.length > 0 ? (
-                  <div className="space-y-3 pt-2">
-                    {trends.map((t: any, idx: number) => {
-                      const maxRev = Math.max(...trends.map((tr: any) => tr.revenue || 1));
-                      const pct = Math.round(((t.revenue || 0) / maxRev) * 100);
-                      return (
-                        <div key={idx} className="space-y-1">
-                          <div className="flex justify-between text-xs font-bold">
-                            <span className="text-stone-700">{t.month}</span>
-                            <span className="text-indigo-700">${((t.revenue || 0) / 100).toLocaleString()}</span>
-                          </div>
-                          <div className="h-3 w-full bg-stone-100 rounded-full overflow-hidden border border-stone-200">
-                            <div
-                              className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 transition-all duration-500"
-                              style={{ width: `${Math.max(pct, 5)}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="p-8 bg-stone-50 border border-stone-200 rounded-2xl text-center space-y-3">
-                    <Activity className="h-8 w-8 text-stone-400 mx-auto" />
-                    <p className="text-xs text-stone-600 font-medium">
-                      No CSV business dataset imported for <strong>{currentOrgName}</strong> yet.
-                    </p>
-                    <Link
-                      href="/data-center"
-                      className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow"
-                    >
-                      <span>Upload Dataset in Data Center →</span>
-                    </Link>
-                  </div>
-                )}
-              </div>
+              ) : (
+                <ColorfulTrendChart
+                  title={`Sales & Returns Velocity — ${currentOrgName}`}
+                  subtitle="Total sales and returns velocity calculated from active dataset rows"
+                  salesCount={metrics?.totalSales ? metrics.totalSales.toLocaleString() : "0"}
+                  salesChange={metrics?.revenueGrowth != null ? `${metrics.revenueGrowth >= 0 ? "+" : ""}${metrics.revenueGrowth.toFixed(1)}%` : "0.0%"}
+                  returnsCount="0"
+                  returnsChange="0.0%"
+                  orgName={currentOrgName}
+                  initialTrends={trends}
+                />
+              )}
             </div>
           )}
 
@@ -216,6 +206,8 @@ export default function DashboardsPage() {
                 <span>View Full Reports Center →</span>
               </Link>
             </div>
+          )}
+          </>
           )}
         </main>
       </div>

@@ -37,7 +37,7 @@ export default function ReportsPage() {
     if (format === "CSV") {
       exportToCSV(name.toLowerCase().replace(/\s+/g, "_"), filesData.length > 0 ? filesData : [{ name, date: new Date().toISOString() }]);
     } else {
-      exportToPDF(name);
+      exportToPDF(name, currentOrgName);
     }
   };
 

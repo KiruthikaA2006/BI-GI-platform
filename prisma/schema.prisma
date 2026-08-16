@@ -34,6 +34,7 @@ model Organization {
   alerts      Alert[]
   auditLogs   AuditLog[]
   dataImports DataImport[]
+  dataRecords DataRecord[]
 }
 
 // ====================
@@ -194,6 +195,8 @@ model Dataset {
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   dataSource     DataSource?  @relation(fields: [dataSourceId], references: [id], onDelete: SetNull)
+  dataImports    DataImport[]
+  records        DataRecord[]
 
   @@index([organizationId])
 }
@@ -408,6 +411,7 @@ model AuditLog {
 model DataImport {
   id             String       @id @default(cuid())
   organizationId String
+  datasetId      String?
   datasetName    String
   uploadedBy     String
   status         String       @default("completed") // pending, validating, completed, failed
@@ -415,30 +419,60 @@ model DataImport {
   completedAt    DateTime?
 
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataset        Dataset?     @relation(fields: [datasetId], references: [id], onDelete: SetNull)
   files          ImportFile[]
+  records        DataRecord[]
 
   @@map("data_imports")
   @@index([organizationId])
+  @@index([datasetId])
 }
 
 model ImportFile {
-  id             String     @id @default(cuid())
+  id             String       @id @default(cuid())
   importId       String
   organizationId String
   fileName       String
   entityType     String
-  rowCount       Int        @default(0)
-  validRows      Int        @default(0)
-  invalidRows    Int        @default(0)
-  status         String     @default("completed")
+  rowCount       Int          @default(0)
+  validRows      Int          @default(0)
+  invalidRows    Int          @default(0)
+  status         String       @default("completed")
   columns        Json?
   sampleData     Json?
   errors         Json?
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime     @default(now())
 
-  import         DataImport @relation(fields: [importId], references: [id], onDelete: Cascade)
+  import         DataImport   @relation(fields: [importId], references: [id], onDelete: Cascade)
+  records        DataRecord[]
 
   @@map("import_files")
   @@index([importId])
   @@index([organizationId])
+}
+
+// ====================
+// DATA RECORDS
+// ====================
+
+model DataRecord {
+  id             String       @id @default(cuid())
+  organizationId String
+  datasetId      String
+  importId       String?
+  importFileId   String?
+  rowNumber      Int          @default(0)
+  data           Json
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  dataset        Dataset      @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  import         DataImport?  @relation(fields: [importId], references: [id], onDelete: SetNull)
+  importFile     ImportFile?  @relation(fields: [importFileId], references: [id], onDelete: SetNull)
+
+  @@map("data_records")
+  @@index([organizationId])
+  @@index([datasetId])
+  @@index([importId])
+  @@index([organizationId, datasetId])
 }

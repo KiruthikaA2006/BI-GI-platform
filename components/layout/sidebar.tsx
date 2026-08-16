@@ -18,17 +18,17 @@ import {
   Building2,
   Users,
   CreditCard,
-  Activity,
   Zap,
-  UploadCloud,
-  Shield,
+  Activity,
   Lock,
   User,
   Building,
   ShieldCheck,
   CheckCircle2,
+  Shield,
   RefreshCw,
 } from "lucide-react";
+import { performLogout } from "@/lib/org-context";
 
 interface NavItem {
   title: string;
@@ -251,17 +251,12 @@ export function Sidebar({ currentRole }: SidebarProps) {
               <span className="block text-[9px] text-neutral-400 truncate">{normalizedRole}</span>
             </div>
           </div>
-          <Link
-            href="/login"
-            onClick={() => {
-              try {
-                localStorage.removeItem("active_role");
-              } catch (e) { }
-            }}
-            className="text-xs text-neutral-400 hover:text-white font-semibold"
+          <button
+            onClick={performLogout}
+            className="text-xs text-neutral-400 hover:text-white font-semibold cursor-pointer"
           >
             Logout
-          </Link>
+          </button>
         </div>
       </div>
     </aside>

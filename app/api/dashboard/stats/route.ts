@@ -20,8 +20,40 @@ export async function GET(req: Request) {
     const filter = { region, department, product };
 
     const cookieStore = await cookies();
-    const activeOrgId = cookieStore.get("active_org_id")?.value || "acme-retail";
-    const activeOrgName = cookieStore.get("active_org_name")?.value || "Acme Global Retail";
+    const activeOrgIdCookie = cookieStore.get("active_org_id")?.value;
+    const activeOrgNameCookie = cookieStore.get("active_org_name")?.value;
+    const orgSessionCookie = cookieStore.get("org_session")?.value;
+    const adminSessionCookie = cookieStore.get("admin_session")?.value;
+
+    let userSession: any = null;
+    if (adminSessionCookie) {
+      try { userSession = JSON.parse(adminSessionCookie); } catch (e) {}
+    } else if (orgSessionCookie) {
+      try { userSession = JSON.parse(orgSessionCookie); } catch (e) {}
+    }
+
+    const activeOrgId =
+      (activeOrgIdCookie ? decodeURIComponent(activeOrgIdCookie) : null) ||
+      userSession?.organizationId ||
+      "";
+
+    const activeOrgName =
+      (activeOrgNameCookie ? decodeURIComponent(activeOrgNameCookie) : null) ||
+      userSession?.organizationName ||
+      "Organization Workspace";
+
+    if (!activeOrgId) {
+      return NextResponse.json({
+        success: true,
+        rawRowsCount: 0,
+        datasetInfo: null,
+        organizationName: activeOrgName,
+        metrics: calculateExecutiveMetrics([]),
+        trends: calculateMonthlyTrends([]),
+        regional: calculateRegionalBreakdown([]),
+        forecasts: calculateStatisticalForecast([]),
+      });
+    }
 
     // 1. Check Active Store dataset for active organization
     let activeDataset = getActiveDataset(activeOrgId);

@@ -32,11 +32,20 @@ export default function UserManagementPage() {
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
   const [users, setUsers] = useState<UserItem[]>([]);
 
-  useEffect(() => {
-    const org = getActiveOrganization();
-    if (org) {
-      setActiveOrg(org);
-      const orgMembers = getOrgMembers(org.id);
+  const fetchUsersFromApi = async (orgId?: string) => {
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.users) && data.users.length > 0) {
+        setUsers(data.users);
+        return;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch users from /api/users:", err);
+    }
+
+    if (orgId) {
+      const orgMembers = getOrgMembers(orgId);
       const mappedUsers: UserItem[] = orgMembers.map((m) => ({
         id: m.id,
         name: m.name,
@@ -47,6 +56,16 @@ export default function UserManagementPage() {
         department: { id: "dept_01", name: m.department },
       }));
       setUsers(mappedUsers);
+    }
+  };
+
+  useEffect(() => {
+    const org = getActiveOrganization();
+    if (org) {
+      setActiveOrg(org);
+      fetchUsersFromApi(org.id);
+    } else {
+      fetchUsersFromApi();
     }
   }, []);
 
@@ -81,7 +100,7 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const handleCreateUser = (e: React.FormEvent) => {
+  const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     const deptObj = departments.find((d) => d.id === userDeptId);
     const newUser: UserItem = {
@@ -105,12 +124,29 @@ export default function UserManagementPage() {
       });
     }
 
+    try {
+      await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: userName,
+          email: userEmail,
+          role: userRole,
+          designation: userDesignation || "Team Member",
+          organizationId: activeOrg?.id,
+        }),
+      });
+    } catch (err) {
+      console.warn("API user creation warning:", err);
+    }
+
     setUsers([newUser, ...users]);
     setShowCreateModal(false);
     resetForm();
+    if (activeOrg) fetchUsersFromApi(activeOrg.id);
   };
 
-  const handleUpdateUser = (e: React.FormEvent) => {
+  const handleUpdateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     const deptObj = departments.find((d) => d.id === userDeptId);
@@ -124,6 +160,21 @@ export default function UserManagementPage() {
         department: deptObj?.name || "General",
         status: "active",
       });
+    }
+
+    try {
+      await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingUser.id,
+          name: userName,
+          role: userRole,
+          designation: userDesignation,
+        }),
+      });
+    } catch (err) {
+      console.warn("API user update warning:", err);
     }
 
     setUsers(
@@ -145,11 +196,26 @@ export default function UserManagementPage() {
     resetForm();
   };
 
-  const handleToggleDeactivate = (userId: string) => {
+  const handleToggleDeactivate = async (userId: string) => {
+    const targetUser = users.find((u) => u.id === userId);
+    const nextStatus = targetUser?.status === "active" ? "deactivated" : "active";
+
+    try {
+      await fetch("/api/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: userId,
+          status: nextStatus,
+        }),
+      });
+    } catch (err) {
+      console.warn("API user status toggle warning:", err);
+    }
+
     setUsers(
       users.map((u) => {
         if (u.id === userId) {
-          const nextStatus = u.status === "active" ? "deactivated" : "active";
           return { ...u, status: nextStatus };
         }
         return u;
@@ -259,91 +325,109 @@ export default function UserManagementPage() {
                 <span>Organization Users ({filteredUsers.length})</span>
               </h3>
             </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-stone-700">
-                <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
-                  <tr>
-                    <th className="p-3">User</th>
-                    <th className="p-3">Designation</th>
-                    <th className="p-3">Assigned Department</th>
-                    <th className="p-3">Assigned Role</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-stone-200">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-stone-50 transition">
-                      <td className="p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center font-bold text-indigo-700 text-sm">
-                            {user.name.charAt(0)}
-                          </div>
-                          <div>
-                            <span className="font-bold text-stone-900 text-xs block">{user.name}</span>
-                            <span className="text-[11px] text-stone-500 block">{user.email}</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="p-3 text-stone-700 font-medium">{user.designation}</td>
-
-                      <td className="p-3">
-                        {user.department ? (
-                          <span className="bg-stone-100 border border-stone-300 px-2.5 py-1 rounded-lg text-stone-800 text-[11px] font-semibold">
-                            {user.department.name}
-                          </span>
-                        ) : (
-                          <span className="text-stone-400 text-[11px]">Unassigned</span>
-                        )}
-                      </td>
-
-                      <td className="p-3">
-                        <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          {user.role.replace("_", " ")}
-                        </span>
-                      </td>
-
-                      <td className="p-3">
-                        {user.status === "active" ? (
-                          <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                            <CheckCircle2 className="h-3 w-3" /> Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                            <XCircle className="h-3 w-3" /> Deactivated
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEditModal(user)}
-                            className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold flex items-center gap-1 border border-stone-300 transition"
-                            title="Edit Role / Department"
-                          >
-                            <Edit className="h-3.5 w-3.5" /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleToggleDeactivate(user.id)}
-                            className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${
-                              user.status === "active"
-                                ? "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100"
-                                : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100"
-                            }`}
-                          >
-                            {user.status === "active" ? <UserX className="h-3.5 w-3.5" /> : <UserCheck className="h-3.5 w-3.5" />}
-                            <span>{user.status === "active" ? "Deactivate" : "Activate"}</span>
-                          </button>
-                        </div>
-                      </td>
+            {filteredUsers.length === 0 ? (
+              <div className="p-8 text-center space-y-3">
+                <div className="h-12 w-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto border border-amber-200">
+                  <Users className="h-6 w-6" />
+                </div>
+                <h4 className="text-base font-black text-stone-900">No User Accounts Found for {activeOrg?.name}</h4>
+                <p className="text-xs text-stone-600 max-w-sm mx-auto">
+                  User accounts and member credentials are strictly isolated per organization for <strong>{activeOrg?.name}</strong>.
+                </p>
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span>Invite First Member to {activeOrg?.name} →</span>
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-stone-700">
+                  <thead className="bg-stone-100 text-stone-600 uppercase text-[10px] tracking-wider border-b border-stone-200 font-bold">
+                    <tr>
+                      <th className="p-3">User</th>
+                      <th className="p-3">Designation</th>
+                      <th className="p-3">Assigned Department</th>
+                      <th className="p-3">Assigned Role</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-stone-200">
+                    {filteredUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-stone-50 transition">
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center font-bold text-indigo-700 text-sm">
+                              {user.name.charAt(0)}
+                            </div>
+                            <div>
+                              <span className="font-bold text-stone-900 text-xs block">{user.name}</span>
+                              <span className="text-[11px] text-stone-500 block">{user.email}</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-3 text-stone-700 font-medium">{user.designation}</td>
+
+                        <td className="p-3">
+                          {user.department ? (
+                            <span className="bg-stone-100 border border-stone-300 px-2.5 py-1 rounded-lg text-stone-800 text-[11px] font-semibold">
+                              {user.department.name}
+                            </span>
+                          ) : (
+                            <span className="text-stone-400 text-[11px]">Unassigned</span>
+                          )}
+                        </td>
+
+                        <td className="p-3">
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {user.role.replace("_", " ")}
+                          </span>
+                        </td>
+
+                        <td className="p-3">
+                          {user.status === "active" ? (
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                              <CheckCircle2 className="h-3 w-3" /> Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                              <XCircle className="h-3 w-3" /> Deactivated
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEditModal(user)}
+                              className="p-1.5 text-stone-500 hover:text-stone-900 hover:bg-stone-100 rounded-lg transition"
+                              title="Edit User"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleToggleDeactivate(user.id)}
+                              className={`p-1.5 rounded-lg transition ${
+                                user.status === "active"
+                                  ? "text-rose-600 hover:bg-rose-50"
+                                  : "text-emerald-600 hover:bg-emerald-50"
+                              }`}
+                              title={user.status === "active" ? "Deactivate User" : "Activate User"}
+                            >
+                              {user.status === "active" ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </main>
       </div>

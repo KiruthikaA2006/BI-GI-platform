@@ -24,6 +24,7 @@ import {
   ChevronUp,
   ShieldAlert,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
 
@@ -88,6 +89,24 @@ export default function DataCenterPage() {
   }, []);
 
   const isAuthorizedToImport = ["SUPER_ADMIN", "ORGANIZATION_ADMIN", "OWNER", "ANALYST"].includes(userRole.toUpperCase());
+
+  const handleDeleteImport = async (id?: string) => {
+    if (!id && !confirm("Are you sure you want to clear all imported datasets for " + currentOrgName + "?")) return;
+    if (id && !confirm("Are you sure you want to delete this dataset?")) return;
+
+    try {
+      const url = id ? `/api/data-imports?id=${id}` : "/api/data-imports?clearAll=true";
+      const res = await fetch(url, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setDataImports((prev) => (id ? prev.filter((item) => item.id !== id) : []));
+      } else {
+        alert(data.error || "Failed to delete dataset");
+      }
+    } catch (err) {
+      console.error("Error deleting dataset import:", err);
+    }
+  };
 
   const pipelineStages = [
     {
@@ -282,6 +301,16 @@ export default function DataCenterPage() {
                             <span className="block text-[10px] text-stone-500 uppercase font-bold">Total Rows</span>
                             <span className="font-bold text-indigo-700">{imp.totalRows.toLocaleString()} rows</span>
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteImport(imp.id);
+                            }}
+                            title="Delete Dataset"
+                            className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl border border-transparent hover:border-rose-200 transition"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                           <button className="text-stone-400 hover:text-stone-700 p-1">
                             {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                           </button>

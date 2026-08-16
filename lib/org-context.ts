@@ -1,5 +1,7 @@
 "use client";
 
+import { clearStatsCache } from "./stats-cache";
+
 export interface Organization {
   id: string;
   name: string;
@@ -33,30 +35,62 @@ export interface OrgMember {
  * organization context and be stored in localStorage after
  * authentication/API resolution.
  */
-export const INITIAL_ORGANIZATIONS: Organization[] = [];
+export const DEFAULT_ORGANIZATIONS: Organization[] = [
+  {
+    id: "acme",
+    name: "Acme Corporation",
+    slug: "acme",
+    role: "Organization Admin",
+    industry: "Enterprise Retail & Commerce",
+    plan: "Enterprise Tier",
+    membersCount: 42,
+  },
+  {
+    id: "qubertrix",
+    name: "Qubertrix Technologies",
+    slug: "qubertrix",
+    role: "Organization Admin",
+    industry: "Software & SaaS",
+    plan: "Enterprise Tier",
+    membersCount: 18,
+  },
+  {
+    id: "infiniq",
+    name: "Infiniq Analytics",
+    slug: "infiniq",
+    role: "Organization Admin",
+    industry: "Financial Services",
+    plan: "Enterprise Tier",
+    membersCount: 25,
+  },
+];
+
+export const INITIAL_ORGANIZATIONS: Organization[] = DEFAULT_ORGANIZATIONS;
 
 /**
  * Get organizations stored for the current user.
  */
 export function getStoredOrganizations(): Organization[] {
   if (typeof window === "undefined") {
-    return [];
+    return DEFAULT_ORGANIZATIONS;
   }
 
   try {
     const raw = localStorage.getItem("user_organizations");
 
     if (!raw) {
-      return [];
+      localStorage.setItem("user_organizations", JSON.stringify(DEFAULT_ORGANIZATIONS));
+      return DEFAULT_ORGANIZATIONS;
     }
 
     const parsed: unknown = JSON.parse(raw);
 
-    if (!Array.isArray(parsed)) {
-      return [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem("user_organizations", JSON.stringify(DEFAULT_ORGANIZATIONS));
+      return DEFAULT_ORGANIZATIONS;
     }
 
-    return parsed.filter(
+    const validOrgs = parsed.filter(
       (org): org is Organization =>
         typeof org === "object" &&
         org !== null &&
@@ -64,9 +98,16 @@ export function getStoredOrganizations(): Organization[] {
         typeof (org as Organization).name === "string" &&
         typeof (org as Organization).slug === "string"
     );
+
+    if (validOrgs.length === 0) {
+      localStorage.setItem("user_organizations", JSON.stringify(DEFAULT_ORGANIZATIONS));
+      return DEFAULT_ORGANIZATIONS;
+    }
+
+    return validOrgs;
   } catch (error) {
     console.error("Failed to parse user_organizations", error);
-    return [];
+    return DEFAULT_ORGANIZATIONS;
   }
 }
 
@@ -359,7 +400,8 @@ export function clearOrganizationContext(): void {
   localStorage.removeItem("active_org_slug");
   localStorage.removeItem("active_role");
   localStorage.removeItem("active_org_industry");
-  localStorage.removeItem("user_organizations");
+  clearStatsCache();
+  // user_organizations is preserved so created organizations remain in existing list
 
   try {
     document.cookie =
@@ -376,4 +418,24 @@ export function clearOrganizationContext(): void {
       error
     );
   }
+}
+
+/**
+ * Log out user: clears local context/session cookies and navigates to organization selection page.
+ * Prepares browser history so pressing 'Back' from organization selection lands on Landing Page (/).
+ */
+export function performLogout(): void {
+  if (typeof window === "undefined") return;
+
+  clearOrganizationContext();
+  try {
+    localStorage.removeItem("active_role");
+    localStorage.removeItem("user_email");
+    localStorage.removeItem("user_id");
+    sessionStorage.setItem("just_logged_out", "true");
+  } catch (e) {
+    console.error("Failed to clear local user storage on logout:", e);
+  }
+
+  window.location.replace("/onboarding/organization");
 }

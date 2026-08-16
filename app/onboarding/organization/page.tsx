@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, PlusCircle, CheckCircle2, ArrowRight, Shield, Globe, Users, ArrowLeft } from "lucide-react";
-import { getStoredOrganizations, setActiveOrganization, Organization } from "@/lib/org-context";
+import { getStoredOrganizations, setActiveOrganization, addOrganization, Organization } from "@/lib/org-context";
 
 export default function OrganizationCheckPage() {
   const router = useRouter();
@@ -26,11 +26,33 @@ export default function OrganizationCheckPage() {
     } else {
       setOrgState("no_org");
     }
+
+    // Replace current history entry with "/" (Landing Page) and push "/onboarding/organization"
+    // This guarantees that pressing browser Back button (<-) from /onboarding/organization ALWAYS lands on "/" (Landing Page)!
+    try {
+      window.history.replaceState({ page: "landing" }, "", "/");
+      window.history.pushState({ page: "org_select" }, "", "/onboarding/organization");
+    } catch (e) {}
+
+    const handlePopState = (e: PopStateEvent) => {
+      try {
+        sessionStorage.removeItem("just_logged_out");
+        window.location.replace("/");
+      } catch (err) {
+        window.location.href = "/";
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
   const handleSelectWorkspace = (org: Organization) => {
     setActiveOrganization(org);
-    router.push("/login");
+    router.push(`/login?orgId=${encodeURIComponent(org.id)}`);
   };
 
   const handleCreateOrgSubmit = async (e: React.FormEvent) => {
@@ -48,7 +70,8 @@ export default function OrganizationCheckPage() {
       membersCount: 1,
     };
 
-    setActiveOrganization(newOrg);
+    // Store created organization in existing organizations list
+    addOrganization(newOrg);
 
     try {
       await fetch("/api/organizations", {
@@ -60,7 +83,13 @@ export default function OrganizationCheckPage() {
       console.warn("Failed to persist organization in PostgreSQL:", err);
     }
 
-    router.push("/login");
+    // Refresh stored workspaces list & switch tab to "has_org" (Select Existing Organization)
+    // so the user can enter the organization and select their role for login!
+    const updatedList = getStoredOrganizations();
+    setWorkspaces(updatedList);
+    setSelectedOrgId(newOrg.id);
+    setNewOrgName("");
+    setOrgState("has_org");
   };
 
   return (

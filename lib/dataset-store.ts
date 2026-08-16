@@ -34,9 +34,13 @@ export function saveActiveDataset(dataset: StoredDataset) {
 
 export function getActiveDataset(orgId?: string): StoredDataset | null {
   if (orgId) {
-    return globalForDatasetStore.allDatasets.find((d) => d.organizationId === orgId) || null;
+    if (globalForDatasetStore.activeDataset?.organizationId === orgId) {
+      return globalForDatasetStore.activeDataset;
+    }
+    const found = globalForDatasetStore.allDatasets.find((d) => d.organizationId === orgId);
+    return found || null;
   }
-  return globalForDatasetStore.activeDataset || globalForDatasetStore.allDatasets[0] || null;
+  return null;
 }
 
 export function getAllStoredDatasets(orgId?: string): StoredDataset[] {

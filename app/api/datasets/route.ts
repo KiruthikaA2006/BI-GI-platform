@@ -6,8 +6,19 @@ import { saveActiveDataset, getAllStoredDatasets } from "@/lib/dataset-store";
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const activeOrgId = cookieStore.get("active_org_id")?.value || "acme-retail";
-    const activeOrgName = cookieStore.get("active_org_name")?.value || "Acme Global Retail";
+    const rawOrgIdCookie = cookieStore.get("active_org_id")?.value;
+    const rawOrgNameCookie = cookieStore.get("active_org_name")?.value;
+    const activeOrgId = rawOrgIdCookie ? decodeURIComponent(rawOrgIdCookie) : "";
+    const activeOrgName = rawOrgNameCookie ? decodeURIComponent(rawOrgNameCookie) : "Organization Workspace";
+
+    if (!activeOrgId) {
+      return NextResponse.json({
+        success: true,
+        organizationId: "",
+        organizationName: activeOrgName,
+        datasets: [],
+      });
+    }
 
     // Strictly filter PostgreSQL datasets by organizationId ONLY
     const dbDatasets = await prisma.dataset.findMany({
@@ -40,14 +51,14 @@ export async function GET() {
   } catch (error) {
     console.error("Dataset GET Error:", error);
     const cookieStore = await cookies();
-    const activeOrgId = cookieStore.get("active_org_id")?.value || "acme-retail";
-    const activeOrgName = cookieStore.get("active_org_name")?.value || "Acme Global Retail";
+    const rawOrgIdCookie = cookieStore.get("active_org_id")?.value;
+    const activeOrgId = rawOrgIdCookie ? decodeURIComponent(rawOrgIdCookie) : "";
 
     return NextResponse.json({
       success: true,
       organizationId: activeOrgId,
-      organizationName: activeOrgName,
-      datasets: getAllStoredDatasets(activeOrgId),
+      organizationName: "Organization Workspace",
+      datasets: activeOrgId ? getAllStoredDatasets(activeOrgId) : [],
     });
   }
 }
@@ -68,8 +79,10 @@ export async function POST(req: Request) {
     } = body;
 
     const cookieStore = await cookies();
-    const activeOrgId = bodyOrgId || cookieStore.get("active_org_id")?.value || "acme-retail";
-    const activeOrgName = bodyOrgName || cookieStore.get("active_org_name")?.value || "Acme Global Retail";
+    const rawOrgIdCookie = cookieStore.get("active_org_id")?.value;
+    const rawOrgNameCookie = cookieStore.get("active_org_name")?.value;
+    const activeOrgId = bodyOrgId || (rawOrgIdCookie ? decodeURIComponent(rawOrgIdCookie) : "");
+    const activeOrgName = bodyOrgName || (rawOrgNameCookie ? decodeURIComponent(rawOrgNameCookie) : "Organization Workspace");
 
     const datasetObj = {
       id: `dt_${Date.now()}`,
@@ -137,6 +150,22 @@ export async function POST(req: Request) {
           data: datasetObj.data as any,
         },
       });
+
+      // Persist individual DataRecord rows in PostgreSQL scoped to organizationId & datasetId
+      if (Array.isArray(datasetObj.data) && datasetObj.data.length > 0) {
+        try {
+          await prisma.dataRecord.createMany({
+            data: datasetObj.data.map((row: any, index: number) => ({
+              organizationId: organization.id,
+              datasetId: savedDataset.id,
+              rowNumber: index + 1,
+              data: row,
+            })),
+          });
+        } catch (recErr) {
+          console.warn("DataRecord creation warning in POST /api/datasets:", recErr);
+        }
+      }
 
       return NextResponse.json({
         success: true,

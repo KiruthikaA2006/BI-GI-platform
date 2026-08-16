@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 
 import { FlowNavigator } from "./flow-navigator";
-import { getActiveOrganization } from "@/lib/org-context";
+import { getActiveOrganization, performLogout } from "@/lib/org-context";
 
 interface HeaderProps {
   title?: string;
@@ -60,15 +60,6 @@ export function Header({
             <span className="flex-1 text-left truncate">Search KPIs, datasets, reports...</span>
             <kbd className="bg-stone-100 text-stone-600 text-[10px] px-1.5 py-0.5 rounded font-mono border border-stone-200">⌘K</kbd>
           </Link>
-
-          {/* Timeframe Filter Dropdown */}
-          <div className="relative">
-            <button className="flex items-center gap-2 bg-white border border-stone-300 text-stone-800 rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-stone-50 transition shadow-sm">
-              <Calendar className="h-3.5 w-3.5 text-indigo-600" />
-              <span>{selectedTimeframe}</span>
-              <ChevronDown className="h-3 w-3 text-stone-500" />
-            </button>
-          </div>
 
           {/* Dynamic Active Organization Indicator */}
           <Link href="/onboarding/organization" className="relative hidden lg:block">
@@ -129,13 +120,13 @@ export function Header({
                   <Settings className="h-3.5 w-3.5" />
                   <span>Billing & Subscription</span>
                 </Link>
-                <Link
-                  href="/login"
-                  className="flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 border-t border-stone-100 mt-1 font-semibold"
+                <button
+                  onClick={performLogout}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-rose-600 hover:bg-rose-50 border-t border-stone-100 mt-1 font-semibold cursor-pointer text-left"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   <span>Log Out</span>
-                </Link>
+                </button>
               </div>
             )}
           </div>

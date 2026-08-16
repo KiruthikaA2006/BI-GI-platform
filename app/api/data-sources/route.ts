@@ -6,26 +6,41 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const activeOrgId = cookieStore.get("active_org_id")?.value || "acme-retail";
+    const activeOrgIdCookie = cookieStore.get("active_org_id")?.value;
+    const orgCookie = cookieStore.get("org_session")?.value;
+    const adminCookie = cookieStore.get("admin_session")?.value;
+
+    let userSession: any = null;
+    if (adminCookie) {
+      try { userSession = JSON.parse(adminCookie); } catch (e) {}
+    } else if (orgCookie) {
+      try { userSession = JSON.parse(orgCookie); } catch (e) {}
+    }
+
+    const activeOrgId =
+      (activeOrgIdCookie ? decodeURIComponent(activeOrgIdCookie) : null) ||
+      userSession?.organizationId;
+
+    if (!activeOrgId) {
+      return NextResponse.json({ success: true, dataSources: [] });
+    }
 
     const dbSources = await prisma.dataSource.findMany({
       where: { organizationId: activeOrgId },
       orderBy: { lastSyncAt: "desc" },
     });
 
-    if (dbSources.length > 0) {
-      return NextResponse.json({ success: true, dataSources: dbSources });
-    }
-    return NextResponse.json({ success: true, dataSources: mockDataSources });
+    return NextResponse.json({ success: true, dataSources: dbSources });
   } catch (error) {
-    return NextResponse.json({ success: true, dataSources: mockDataSources });
+    return NextResponse.json({ success: true, dataSources: [] });
   }
 }
 
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
-    const activeOrgId = cookieStore.get("active_org_id")?.value || "acme-retail";
+    const rawOrgIdCookie = cookieStore.get("active_org_id")?.value;
+    const activeOrgId = rawOrgIdCookie ? decodeURIComponent(rawOrgIdCookie) : "";
 
     const body = await req.json();
     const { name, type, syncFrequency } = body;

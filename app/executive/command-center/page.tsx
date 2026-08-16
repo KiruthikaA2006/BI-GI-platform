@@ -22,28 +22,39 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
+import { getCachedStats, setCachedStats } from "@/lib/stats-cache";
 
 export default function ExecutiveCommandCenterPage() {
   const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
   const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const org = getActiveOrganization();
+    const orgId = org?.id || "default";
     if (org && org.name) setCurrentOrgName(org.name);
+
+    const cached = getCachedStats(orgId);
+    if (cached) {
+      setStats(cached);
+      setLoading(false);
+    }
 
     fetch("/api/dashboard/stats")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setStats(data);
+          setCachedStats(orgId, data);
           if (data.organizationName) setCurrentOrgName(data.organizationName);
         }
       })
-      .catch((err) => console.error("Error fetching stats for executive command center:", err));
+      .catch((err) => console.error("Error fetching stats for executive command center:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   const metrics = stats?.metrics;
-  const hasRealData = stats?.source === "database" && metrics && stats?.rawRowsCount > 0;
+  const hasRealData = Boolean(metrics && (stats?.rawRowsCount > 0 || (metrics.totalRevenue || 0) > 0));
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900 selection:bg-indigo-500">
@@ -53,7 +64,19 @@ export default function ExecutiveCommandCenterPage() {
         <Header title="Executive Command Center" subtitle="Overall Business Health Cockpit • Answers: What is happening? → Why? → What happens next? → What should we do?" />
 
         <main className="p-6 space-y-8 max-w-[1600px] mx-auto w-full">
-          {/* Executive Philosophy Header Banner Card */}
+          {loading ? (
+            <div className="animate-pulse space-y-6">
+              <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+                <div className="bg-white/80 h-32 rounded-3xl border border-stone-300 shadow-sm" />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Executive Philosophy Header Banner Card */}
           <div className="bg-white border border-stone-300 p-6 rounded-3xl relative overflow-hidden shadow-sm">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
               <div className="space-y-2">
@@ -73,7 +96,7 @@ export default function ExecutiveCommandCenterPage() {
                 <div>
                   <span className="text-[10px] font-extrabold uppercase text-stone-500 block">Overall Business Health</span>
                   <span className="text-3xl font-black text-emerald-700">
-                    {hasRealData && metrics.healthScore ? metrics.healthScore.toFixed(1) : "0.0"}
+                    {hasRealData && metrics?.healthScore != null ? metrics.healthScore.toFixed(1) : "0.0"}
                     <span className="text-xs text-stone-500">/100</span>
                   </span>
                 </div>
@@ -81,7 +104,7 @@ export default function ExecutiveCommandCenterPage() {
                 <div>
                   <span className="text-[10px] font-extrabold uppercase text-stone-500 block">Executive Velocity</span>
                   <span className="text-sm font-bold text-indigo-700 flex items-center gap-1">
-                    <ArrowUpRight className="h-4 w-4" /> {hasRealData && metrics.growthIndex ? metrics.growthIndex : "0.0% YoY"}
+                    <ArrowUpRight className="h-4 w-4" /> {hasRealData && metrics?.growthIndex ? metrics.growthIndex : "0.0% YoY"}
                   </span>
                 </div>
               </div>
@@ -196,6 +219,8 @@ export default function ExecutiveCommandCenterPage() {
               </Link>
             </div>
           </div>
+          </>
+          )}
         </main>
       </div>
     </div>

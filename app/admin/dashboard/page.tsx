@@ -35,7 +35,7 @@ export default function AdminDashboardPage() {
     if (org) {
       setCurrentOrgName(org.name);
       const members = getOrgMembers(org.id);
-      setUsersCount(members.length || 1);
+      setUsersCount(members.length);
     }
 
     fetch("/api/data-sources")

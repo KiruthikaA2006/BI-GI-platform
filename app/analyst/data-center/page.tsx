@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
-import { Database, CheckCircle2, RefreshCw, Layers, ShieldCheck, ArrowRight, Activity, FileSpreadsheet } from "lucide-react";
+import { Database, CheckCircle2, RefreshCw, Layers, ShieldCheck, ArrowRight, Activity, FileSpreadsheet, Trash2 } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
 
 export default function AnalystDataCenterPage() {
@@ -26,6 +26,24 @@ export default function AnalystDataCenterPage() {
       .catch((err) => console.error("Error fetching data imports for analyst pipeline:", err))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDeleteImport = async (id?: string) => {
+    if (!id && !confirm("Are you sure you want to clear all imported datasets for " + currentOrgName + "?")) return;
+    if (id && !confirm("Are you sure you want to delete this dataset?")) return;
+
+    try {
+      const url = id ? `/api/data-imports?id=${id}` : "/api/data-imports?clearAll=true";
+      const res = await fetch(url, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setImports((prev) => (id ? prev.filter((item) => item.id !== id) : []));
+      } else {
+        alert(data.error || "Failed to delete dataset");
+      }
+    } catch (err) {
+      console.error("Error deleting dataset import:", err);
+    }
+  };
 
   const pipelineStages = [
     { stage: "1. Data Connection & Ingestion", status: "Active", desc: "CSV, XLSX & API connectors ingestion engine" },
@@ -100,6 +118,7 @@ export default function AnalystDataCenterPage() {
                       <th className="p-3">Files Count</th>
                       <th className="p-3">Total Rows</th>
                       <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-200 bg-white font-medium">
@@ -116,6 +135,15 @@ export default function AnalystDataCenterPage() {
                           <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-emerald-200">
                             <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Completed
                           </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          <button
+                            onClick={() => handleDeleteImport(imp.id)}
+                            title="Delete Dataset"
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
                     ))}

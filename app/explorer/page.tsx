@@ -11,6 +11,25 @@ export default function ExplorerPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
 
+  const query = searchTerm.trim().toLowerCase();
+  const hasQuery = query.length > 0;
+
+  const filteredKPIs = hasQuery
+    ? mockDepartmentKPIs.filter(
+        (kpi) =>
+          kpi.name.toLowerCase().includes(query) ||
+          kpi.category.toLowerCase().includes(query)
+      )
+    : [];
+
+  const filteredDatasets = hasQuery
+    ? mockDatasets.filter(
+        (dt) =>
+          dt.name.toLowerCase().includes(query) ||
+          dt.description.toLowerCase().includes(query)
+      )
+    : [];
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900">
       <Sidebar currentRole="ORGANIZATION_ADMIN" />
@@ -51,47 +70,65 @@ export default function ExplorerPage() {
           </div>
 
           {/* Search Results Sections */}
-          <div className="space-y-6">
-            {/* KPIs Results */}
-            {(categoryFilter === "All" || categoryFilter === "KPIs") && (
-              <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
-                <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
-                  <Target className="h-4 w-4 text-indigo-600" />
-                  <span>Matching KPIs ({mockDepartmentKPIs.length})</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {mockDepartmentKPIs.map((kpi) => (
-                    <div key={kpi.id} className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                      <span className="text-xs font-bold text-stone-900">{kpi.name}</span>
-                      <span className="block text-lg font-black text-indigo-700 mt-1">{kpi.metric}</span>
-                      <span className="text-[10px] text-stone-500 block mt-1">Category: {kpi.category}</span>
-                    </div>
-                  ))}
+          {!hasQuery ? (
+            <div className="bg-white border border-stone-300 p-12 rounded-3xl text-center space-y-3 shadow-sm">
+              <Search className="h-10 w-10 text-stone-400 mx-auto" />
+              <h3 className="text-lg font-bold text-stone-900">Enter Search Keywords</h3>
+              <p className="text-xs text-stone-500 max-w-md mx-auto">
+                Type a keyword in the search input above to discover matching KPIs, datasets, reports, and system telemetry.
+              </p>
+            </div>
+          ) : filteredKPIs.length === 0 && filteredDatasets.length === 0 ? (
+            <div className="bg-white border border-stone-300 p-12 rounded-3xl text-center space-y-3 shadow-sm">
+              <Search className="h-10 w-10 text-stone-400 mx-auto" />
+              <h3 className="text-lg font-bold text-stone-900">No Matching Results</h3>
+              <p className="text-xs text-stone-500 max-w-md mx-auto">
+                No KPIs or datasets matched "{searchTerm}". Try searching for terms like "MRR", "Churn", "Sales", or "Revenue".
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* KPIs Results */}
+              {(categoryFilter === "All" || categoryFilter === "KPIs") && filteredKPIs.length > 0 && (
+                <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
+                  <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-indigo-600" />
+                    <span>Matching KPIs ({filteredKPIs.length})</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {filteredKPIs.map((kpi) => (
+                      <div key={kpi.id} className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                        <span className="text-xs font-bold text-stone-900">{kpi.name}</span>
+                        <span className="block text-lg font-black text-indigo-700 mt-1">{kpi.metric}</span>
+                        <span className="text-[10px] text-stone-500 block mt-1">Category: {kpi.category}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Datasets Results */}
-            {(categoryFilter === "All" || categoryFilter === "Datasets") && (
-              <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
-                <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
-                  <TableProperties className="h-4 w-4 text-emerald-600" />
-                  <span>Matching Datasets ({mockDatasets.length})</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {mockDatasets.map((dt) => (
-                    <div key={dt.id} className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
-                      <span className="text-xs font-bold text-stone-900">{dt.name}</span>
-                      <p className="text-[11px] text-stone-600 mt-1 line-clamp-2">{dt.description}</p>
-                      <span className="text-[10px] text-emerald-700 font-bold block mt-2">
-                        {dt.rowCount.toLocaleString()} rows
-                      </span>
-                    </div>
-                  ))}
+              {/* Datasets Results */}
+              {(categoryFilter === "All" || categoryFilter === "Datasets") && filteredDatasets.length > 0 && (
+                <div className="bg-white border border-stone-300 p-6 rounded-3xl space-y-4 shadow-sm">
+                  <h3 className="text-base font-bold text-stone-900 flex items-center gap-2">
+                    <TableProperties className="h-4 w-4 text-emerald-600" />
+                    <span>Matching Datasets ({filteredDatasets.length})</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {filteredDatasets.map((dt) => (
+                      <div key={dt.id} className="bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                        <span className="text-xs font-bold text-stone-900">{dt.name}</span>
+                        <p className="text-[11px] text-stone-600 mt-1 line-clamp-2">{dt.description}</p>
+                        <span className="text-[10px] text-emerald-700 font-bold block mt-2">
+                          {dt.rowCount.toLocaleString()} rows
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>

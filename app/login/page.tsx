@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Zap, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, ArrowLeft, Globe, User, Building2 } from "lucide-react";
-import { getActiveOrganization, registerOrgMember, Organization } from "@/lib/org-context";
+import { getActiveOrganization, getStoredOrganizations, setActiveOrganization, registerOrgMember, Organization } from "@/lib/org-context";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,11 +12,29 @@ export default function LoginPage() {
   const [activeOrg, setActiveOrgState] = useState<Organization | null>(null);
   const [selectedRole, setSelectedRole] = useState<"ORGANIZATION_ADMIN" | "EXECUTIVE" | "DEPARTMENT_MANAGER" | "ANALYST" | "SUPER_ADMIN">("ORGANIZATION_ADMIN");
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("••••••••••••");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const org = getActiveOrganization();
+    let org: Organization | null = null;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const qOrgId = params.get("orgId");
+      if (qOrgId) {
+        const allOrgs = getStoredOrganizations();
+        const found = allOrgs.find((o) => o.id === qOrgId || o.slug === qOrgId);
+        if (found) {
+          setActiveOrganization(found);
+          org = found;
+        }
+      }
+    }
+
+    if (!org) {
+      org = getActiveOrganization();
+    }
+
     if (org) {
       setActiveOrgState(org);
       const domain = org.slug ? `${org.slug}.com` : "company.com";
@@ -50,13 +68,13 @@ export default function LoginPage() {
       localStorage.setItem("active_role", selectedRole);
       localStorage.setItem("user_email", email);
 
+      const namePart = email.split("@")[0].replace(/[^a-zA-Z]/g, " ").trim();
+      const formattedName = fullName.trim() || (namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : "Employee User");
+
       if (activeOrg) {
         // Register user and role under the active organization's members store
-        const namePart = email.split("@")[0].replace(/[^a-zA-Z]/g, " ").trim();
-        const formattedName = namePart ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : "Employee User";
-
         registerOrgMember(activeOrg.id, {
-          name: `${formattedName} (${selectedRole.replace("_", " ")})`,
+          name: formattedName,
           email: email,
           role: selectedRole,
           designation:
@@ -83,6 +101,7 @@ export default function LoginPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          name: formattedName,
           email,
           password,
           role: selectedRole,
@@ -183,6 +202,28 @@ export default function LoginPage() {
                 ))}
               </select>
             </div>
+
+            {/* Full Name Input (Signup Mode) */}
+            {authMode === "signup" && (
+              <div>
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
+                  Full Name
+                </label>
+                <div className="relative rounded-xl shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-4 w-4 text-stone-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={authMode === "signup"}
+                    placeholder="Jane Doe"
+                    className="block w-full pl-10 pr-3 py-2.5 bg-stone-50 border border-stone-300 rounded-xl text-sm text-stone-900 font-medium placeholder-stone-400 focus:outline-none focus:border-indigo-600"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Work Email Address Input */}
             <div>
