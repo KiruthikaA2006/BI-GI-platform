@@ -22,39 +22,13 @@ import {
   BarChart3,
 } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
-import { getCachedStats, setCachedStats } from "@/lib/stats-cache";
+import { useTelemetry } from "@/components/providers/telemetry-provider";
 
 export default function AIInsightsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"anomalies" | "root_cause" | "explanations">("anomalies");
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
+  const { stats, loading, currentOrgName } = useTelemetry();
   const [addingGoal, setAddingGoal] = useState<string | null>(null);
-
-  useEffect(() => {
-    const org = getActiveOrganization();
-    const orgId = org?.id || "default";
-    if (org && org.name) setCurrentOrgName(org.name);
-
-    const cached = getCachedStats(orgId);
-    if (cached) {
-      setStats(cached);
-      setLoading(false);
-    }
-
-    fetch("/api/dashboard/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStats(data);
-          setCachedStats(orgId, data);
-          if (data.organizationName) setCurrentOrgName(data.organizationName);
-        }
-      })
-      .catch((err) => console.error("Error fetching stats for AI Insights:", err))
-      .finally(() => setLoading(false));
-  }, []);
 
   const hasData = Boolean(stats && stats.rawRowsCount > 0 && stats.datasetInfo);
   const metrics = stats?.metrics;

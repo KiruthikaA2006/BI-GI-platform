@@ -22,41 +22,17 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
-import { getCachedStats, setCachedStats } from "@/lib/stats-cache";
+import { useTelemetry } from "@/components/providers/telemetry-provider";
 
 export default function DashboardPage() {
-  const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { stats, loading, currentOrgName } = useTelemetry();
 
   useEffect(() => {
     const active = getActiveOrganization();
     const activeRole = typeof window !== "undefined" ? localStorage.getItem("active_role") : null;
     if (!active || !activeRole) {
       window.location.replace("/onboarding/organization");
-      return;
     }
-
-    const orgId = active.id || "default";
-    if (active.name) setCurrentOrgName(active.name);
-
-    const cached = getCachedStats(orgId);
-    if (cached) {
-      setStats(cached);
-      setLoading(false);
-    }
-
-    fetch("/api/dashboard/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStats(data);
-          setCachedStats(orgId, data);
-          if (data.organizationName) setCurrentOrgName(data.organizationName);
-        }
-      })
-      .catch((err) => console.error("Error fetching dashboard stats:", err))
-      .finally(() => setLoading(false));
   }, []);
 
   const metrics = stats?.metrics;

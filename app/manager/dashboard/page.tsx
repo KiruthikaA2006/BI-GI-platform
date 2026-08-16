@@ -6,37 +6,11 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { LayoutDashboard, Target, Building2, Trophy, Bell, FileText, ArrowRight, CheckCircle2, DollarSign, Users, TrendingUp } from "lucide-react";
 import { getActiveOrganization } from "@/lib/org-context";
-import { getCachedStats, setCachedStats } from "@/lib/stats-cache";
+import { useTelemetry } from "@/components/providers/telemetry-provider";
 import { ColorfulTrendChart } from "@/components/analytics/colorful-trend-chart";
 
 export default function ManagerDashboardPage() {
-  const [currentOrgName, setCurrentOrgName] = useState("Organization Workspace");
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const org = getActiveOrganization();
-    const orgId = org?.id || "default";
-    if (org && org.name) setCurrentOrgName(org.name);
-
-    const cached = getCachedStats(orgId);
-    if (cached) {
-      setStats(cached);
-      setLoading(false);
-    }
-
-    fetch("/api/dashboard/stats")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStats(data);
-          setCachedStats(orgId, data);
-          if (data.organizationName) setCurrentOrgName(data.organizationName);
-        }
-      })
-      .catch((err) => console.error("Error fetching manager dashboard stats:", err))
-      .finally(() => setLoading(false));
-  }, []);
+  const { stats, loading, currentOrgName } = useTelemetry();
 
   const metrics = stats?.metrics;
   const hasData = Boolean(stats && stats.rawRowsCount > 0 && stats.datasetInfo);
