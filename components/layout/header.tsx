@@ -62,13 +62,12 @@ export function Header({
           </Link>
 
           {/* Dynamic Active Organization Indicator */}
-          <Link href="/onboarding/organization" className="relative hidden lg:block">
-            <div className="flex items-center gap-2 bg-white border border-stone-300 text-stone-800 rounded-lg px-3 py-1.5 text-xs font-bold hover:bg-stone-50 transition shadow-sm">
+          <div className="relative hidden lg:block">
+            <div className="flex items-center gap-2 bg-white border border-stone-300 text-stone-800 rounded-lg px-3 py-1.5 text-xs font-bold shadow-sm">
               <Building2 className="h-3.5 w-3.5 text-emerald-600" />
-              <span className="max-w-[140px] truncate">{selectedOrg}</span>
-              <ChevronDown className="h-3 w-3 text-stone-500" />
+              <span className="max-w-[160px] truncate">{selectedOrg}</span>
             </div>
-          </Link>
+          </div>
 
           {/* AI Ask Assistant Trigger */}
           <Link
