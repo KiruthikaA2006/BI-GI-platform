@@ -205,6 +205,7 @@ export function Sidebar({ currentRole }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${isActive
                       ? "bg-neutral-900 text-white font-bold border-l-2 border-amber-400 shadow-md shadow-amber-400/10"
                       : "hover:bg-neutral-900/80 hover:text-white text-neutral-400"

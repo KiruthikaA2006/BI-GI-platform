@@ -5,7 +5,7 @@ import { AdminSidebar } from "@/components/layout/admin-sidebar";
 import { Header } from "@/components/layout/header";
 import { History, ShieldCheck, Download, Filter } from "lucide-react";
 import { mockAuditLogs } from "@/lib/mock-data";
-import { exportToCSV } from "@/lib/export-utils";
+import { exportToCSV, exportAuditLogsToPDF } from "@/lib/export-utils";
 import { AdminFlowNavigator } from "@/components/layout/admin-flow-navigator";
 
 export default function AdminAuditLogsPage() {
@@ -18,6 +18,10 @@ export default function AdminAuditLogsPage() {
 
   const handleExportCSV = () => {
     exportToCSV("global_platform_audit_logs", filteredLogs);
+  };
+
+  const handleExportPDF = () => {
+    exportAuditLogsToPDF("Global Platform (Super Admin)", filteredLogs);
   };
 
   return (
@@ -37,11 +41,19 @@ export default function AdminAuditLogsPage() {
             </div>
             <div className="flex items-center gap-3">
               <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download PDF Audit Report</span>
+              </button>
+
+              <button
                 onClick={handleExportCSV}
                 className="flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
               >
                 <Download className="h-4 w-4" />
-                <span>Export Global Audit CSV</span>
+                <span>Export CSV</span>
               </button>
 
               <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold">

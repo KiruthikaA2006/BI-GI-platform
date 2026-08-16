@@ -76,35 +76,47 @@ export function getStoredOrganizations(): Organization[] {
   }
 
   try {
+    let customOrgs: Organization[] = [];
+    try {
+      const customRaw = localStorage.getItem("custom_user_organizations");
+      if (customRaw) {
+        const parsedCustom = JSON.parse(customRaw);
+        if (Array.isArray(parsedCustom)) {
+          customOrgs = parsedCustom.filter(
+            (org): org is Organization =>
+              typeof org === "object" &&
+              org !== null &&
+              typeof (org as Organization).id === "string" &&
+              typeof (org as Organization).name === "string"
+          );
+        }
+      }
+    } catch (e) {}
+
+    let baseOrgs: Organization[] = DEFAULT_ORGANIZATIONS;
     const raw = localStorage.getItem("user_organizations");
-
-    if (!raw) {
-      localStorage.setItem("user_organizations", JSON.stringify(DEFAULT_ORGANIZATIONS));
-      return DEFAULT_ORGANIZATIONS;
+    if (raw) {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const valid = parsed.filter(
+          (org): org is Organization =>
+            typeof org === "object" &&
+            org !== null &&
+            typeof (org as Organization).id === "string" &&
+            typeof (org as Organization).name === "string"
+        );
+        if (valid.length > 0) baseOrgs = valid;
+      }
     }
 
-    const parsed: unknown = JSON.parse(raw);
+    const mergedMap = new Map<string, Organization>();
+    DEFAULT_ORGANIZATIONS.forEach((o) => mergedMap.set(o.id, o));
+    baseOrgs.forEach((o) => mergedMap.set(o.id, o));
+    customOrgs.forEach((o) => mergedMap.set(o.id, o));
 
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      localStorage.setItem("user_organizations", JSON.stringify(DEFAULT_ORGANIZATIONS));
-      return DEFAULT_ORGANIZATIONS;
-    }
-
-    const validOrgs = parsed.filter(
-      (org): org is Organization =>
-        typeof org === "object" &&
-        org !== null &&
-        typeof (org as Organization).id === "string" &&
-        typeof (org as Organization).name === "string" &&
-        typeof (org as Organization).slug === "string"
-    );
-
-    if (validOrgs.length === 0) {
-      localStorage.setItem("user_organizations", JSON.stringify(DEFAULT_ORGANIZATIONS));
-      return DEFAULT_ORGANIZATIONS;
-    }
-
-    return validOrgs;
+    const result = Array.from(mergedMap.values());
+    localStorage.setItem("user_organizations", JSON.stringify(result));
+    return result;
   } catch (error) {
     console.error("Failed to parse user_organizations", error);
     return DEFAULT_ORGANIZATIONS;
@@ -135,7 +147,7 @@ export function getActiveOrganization(): Organization | null {
    * Find the real organization in the user's organization list.
    */
   if (storedId) {
-    const found = allOrgs.find((org) => org.id === storedId);
+    const found = allOrgs.find((org) => org.id === storedId || org.slug === storedId);
 
     if (found) {
       return found;
@@ -221,35 +233,33 @@ export function addOrganization(
     return [];
   }
 
-  const allOrgs = getStoredOrganizations();
+  try {
+    const customRaw = localStorage.getItem("custom_user_organizations");
+    let customOrgs: Organization[] = customRaw ? JSON.parse(customRaw) : [];
+    if (!Array.isArray(customOrgs)) customOrgs = [];
 
-  const existingIndex = allOrgs.findIndex(
-    (org) =>
-      org.id === newOrg.id ||
-      org.name.toLowerCase() === newOrg.name.toLowerCase()
-  );
+    const existingIndex = customOrgs.findIndex(
+      (org) =>
+        org.id === newOrg.id ||
+        org.name.toLowerCase() === newOrg.name.toLowerCase() ||
+        org.slug === newOrg.slug
+    );
 
-  if (existingIndex >= 0) {
-    allOrgs[existingIndex] = {
-      ...allOrgs[existingIndex],
-      ...newOrg,
-    };
-  } else {
-    allOrgs.push(newOrg);
+    if (existingIndex >= 0) {
+      customOrgs[existingIndex] = {
+        ...customOrgs[existingIndex],
+        ...newOrg,
+      };
+    } else {
+      customOrgs.push(newOrg);
+    }
+
+    localStorage.setItem("custom_user_organizations", JSON.stringify(customOrgs));
+  } catch (e) {
+    console.error("Failed to save custom_user_organizations", e);
   }
 
-  localStorage.setItem(
-    "user_organizations",
-    JSON.stringify(allOrgs)
-  );
-
-  /**
-   * IMPORTANT:
-   * Do not automatically create a fake organization member.
-   * Members must come from the real backend/database.
-   */
-
-  return allOrgs;
+  return getStoredOrganizations();
 }
 
 /**

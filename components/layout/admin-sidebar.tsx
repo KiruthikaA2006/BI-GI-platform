@@ -67,6 +67,7 @@ export function AdminSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-emerald-600/20 text-emerald-400 font-semibold border-l-2 border-emerald-500"

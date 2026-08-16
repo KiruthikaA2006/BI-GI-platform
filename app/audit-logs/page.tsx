@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { History, ShieldCheck, User, Calendar, Terminal, Download, Filter } from "lucide-react";
-import { exportToCSV } from "@/lib/export-utils";
+import { exportToCSV, exportAuditLogsToPDF } from "@/lib/export-utils";
 import { getActiveOrganization } from "@/lib/org-context";
 
 export default function AuditLogsPage() {
@@ -37,6 +37,10 @@ export default function AuditLogsPage() {
     exportToCSV(`security_audit_logs_${currentOrgName.toLowerCase().replace(/\s+/g, "_")}`, filteredLogs);
   };
 
+  const handleExportPDF = () => {
+    exportAuditLogsToPDF(currentOrgName, filteredLogs);
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#e4dac9] text-stone-900">
       <Sidebar currentRole="ORGANIZATION_ADMIN" />
@@ -53,11 +57,19 @@ export default function AuditLogsPage() {
             </div>
             <div className="flex items-center gap-3">
               <button
+                onClick={handleExportPDF}
+                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl text-xs font-bold transition shadow"
+              >
+                <Download className="h-4 w-4" />
+                <span>Download PDF Audit Report</span>
+              </button>
+
+              <button
                 onClick={handleExportCSV}
                 className="flex items-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 px-4 py-2.5 rounded-xl text-xs font-bold transition shadow-sm"
               >
                 <Download className="h-4 w-4" />
-                <span>Export Audit CSV</span>
+                <span>Export CSV</span>
               </button>
 
               <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold">
